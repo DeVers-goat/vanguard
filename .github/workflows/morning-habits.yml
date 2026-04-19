@@ -16,31 +16,4 @@ jobs:
         env:
           TWILIO_SID:   ${{ secrets.TWILIO_SID }}
           TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
-        run: |
-          HABITS=$(cat habits.json)
-          NN=$(python3 -c "
-import json
-with open('habits.json', encoding='utf-8-sig') as f:
-    h=json.load(f)
-print('\n'.join(['  - '+x['name'] for x in h if x.get('isNN')]))")
-          REG=$(python3 -c "
-import json
-with open('habits.json', encoding='utf-8-sig') as f:
-    h=json.load(f)
-print('\n'.join(['  - '+x['name'] for x in h if not x.get('isNN')]))")
-          TODAY=$(date +'%A, %B %-d')
-          MSG="Good morning! Plan for $TODAY
-
-          Non-Negotiables:
-          $NN
-
-          Daily Habits:
-          $REG
-
-          Make today count!"
-
-          curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_SID/Messages.json" \
-            -u "$TWILIO_SID:$TWILIO_TOKEN" \
-            --data-urlencode "From=whatsapp:+14155238886" \
-            --data-urlencode "To=whatsapp:+972549715522" \
-            --data-urlencode "Body=$MSG"
+        run: python3 send_reminder.py
