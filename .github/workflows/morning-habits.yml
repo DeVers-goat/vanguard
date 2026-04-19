@@ -1,0 +1,44 @@
+name: Morning Habit Reminder
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 9:00 AM Israel time (UTC+3)
+  workflow_dispatch:        # allows manual trigger from GitHub
+
+jobs:
+  send-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send WhatsApp reminder
+        env:
+          TWILIO_SID:   ${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
+        run: |
+          HABITS=$(cat habits.json)
+          NN=$(echo "$HABITS" | python3 -c "
+          import json,sys
+          h=json.load(sys.stdin)
+          print('\n'.join(['  - '+x['name'] for x in h if x.get('isNN')]))")
+          REG=$(echo "$HABITS" | python3 -c "
+          import json,sys
+          h=json.load(sys.stdin)
+          print('\n'.join(['  - '+x['name'] for x in h if not x.get('isNN')]))")
+          TODAY=$(date +'%A, %B %-d')
+          MSG="Good morning! Plan for $TODAY
+
+          Non-Negotiables:
+          $NN
+
+          Daily Habits:
+          $REG
+
+          Make today count!"
+
+          curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_SID/Messages.json" \
+            -u "$TWILIO_SID:$TWILIO_TOKEN" \
+            --data-urlencode "From=whatsapp:+14155238886" \
+            --data-urlencode "To=whatsapp:+972549715522" \
+            --data-urlencode "Body=$MSG"
