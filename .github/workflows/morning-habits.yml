@@ -18,14 +18,16 @@ jobs:
           TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
         run: |
           HABITS=$(cat habits.json)
-          NN=$(echo "$HABITS" | python3 -c "
-          import json,sys
-          h=json.load(sys.stdin)
-          print('\n'.join(['  - '+x['name'] for x in h if x.get('isNN')]))")
-          REG=$(echo "$HABITS" | python3 -c "
-          import json,sys
-          h=json.load(sys.stdin)
-          print('\n'.join(['  - '+x['name'] for x in h if not x.get('isNN')]))")
+          NN=$(python3 -c "
+import json
+with open('habits.json', encoding='utf-8-sig') as f:
+    h=json.load(f)
+print('\n'.join(['  - '+x['name'] for x in h if x.get('isNN')]))")
+          REG=$(python3 -c "
+import json
+with open('habits.json', encoding='utf-8-sig') as f:
+    h=json.load(f)
+print('\n'.join(['  - '+x['name'] for x in h if not x.get('isNN')]))")
           TODAY=$(date +'%A, %B %-d')
           MSG="Good morning! Plan for $TODAY
 
