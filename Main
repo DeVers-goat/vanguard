@@ -1,0 +1,1229 @@
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ── FONTS ───────────────────────────────────────────── */
+const _fl = document.createElement("link");
+_fl.rel = "stylesheet";
+_fl.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Oxanium:wght@700;800&display=swap";
+document.head.appendChild(_fl);
+
+/* ── GLOBAL STYLES ───────────────────────────────────── */
+const _st = document.createElement("style");
+_st.textContent = `
+:root{
+  --canvas:#08080f; --g0:rgba(255,255,255,.028); --g1:rgba(255,255,255,.052);
+  --g2:rgba(255,255,255,.085); --e0:rgba(255,255,255,.055); --e1:rgba(255,255,255,.1);
+  --t0:#1a1a30; --t1:#3a3a5a; --t2:#6868a0; --t3:#9898c8; --t4:#c4c4e0; --t5:#e8e8f8; --t6:#f5f5ff;
+  --p:#7c6ef8; --p1:rgba(124,110,248,.16); --p2:rgba(124,110,248,.08);
+  --em:#2dd4a0; --em1:rgba(45,212,160,.14); --em2:rgba(45,212,160,.06);
+  --am:#f5a623; --am1:rgba(245,166,35,.14);
+  --ro:#f06292; --ro1:rgba(240,98,146,.14);
+  --sk:#38b2f8; --sk1:rgba(56,178,248,.14);
+  --or:#f97136; --or1:rgba(249,113,54,.14);
+  --gold:#e4b84a; --gold1:rgba(228,184,74,.14);
+  --fd:'Oxanium',sans-serif; --fm:'JetBrains Mono',monospace; --fb:'Plus Jakarta Sans',sans-serif;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body,#root{height:100%;overscroll-behavior:none;}
+body{background:var(--canvas);color:var(--t4);font-family:var(--fb);max-width:430px;margin:0 auto;overflow-x:hidden;}
+input,button,textarea,select{font-family:inherit;outline:none;border:none;background:none;}
+textarea{resize:none;}::-webkit-scrollbar{width:0;}
+input[type=date]::-webkit-calendar-picker-indicator,
+input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.45) sepia(1) hue-rotate(210deg) saturate(2);opacity:.5;cursor:pointer;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(124,110,248,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(124,110,248,.025) 1px,transparent 1px);
+  background-size:40px 40px;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 10% 5%,rgba(124,110,248,.07) 0%,transparent 65%),
+  radial-gradient(ellipse 50% 40% at 90% 95%,rgba(45,212,160,.04) 0%,transparent 60%);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(48px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes nodePulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes orbitRing{0%,100%{r:19;opacity:.5}50%{r:27;opacity:0}}
+@keyframes stepIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 0 1px rgba(124,110,248,.18),0 4px 24px rgba(0,0,0,.5)}50%{box-shadow:0 0 0 1px rgba(124,110,248,.36),0 4px 32px rgba(124,110,248,.18)}}
+@keyframes statusPop{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+@keyframes tabSlide{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+.au{animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both;}
+.card-hover:active{transform:scale(.975);transition:transform .22s cubic-bezier(.22,1,.36,1);}
+`;
+document.head.appendChild(_st);
+
+/* ── CONSTANTS ───────────────────────────────────────── */
+const MONTHS   = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS_F = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const BOOK_COLORS = ["#7c6ef8","#2dd4a0","#f5a623","#f06292","#38b2f8","#f97136","#a78bfa","#e4b84a"];
+const GC = {
+  vi:{hex:"#7c6ef8",gf:"gf-vi",label:"Growth"},   em:{hex:"#2dd4a0",gf:"gf-em",label:"Health"},
+  sk:{hex:"#38b2f8",gf:"gf-sk",label:"Career"},    am:{hex:"#f5a623",gf:"gf-am",label:"Finance"},
+  ro:{hex:"#f06292",gf:"gf-ro",label:"Body"},       or:{hex:"#f97136",gf:"gf-or",label:"Personal"},
+};
+const mkMo = () => Object.fromEntries(Array.from({length:12},(_,i)=>[i+1,{text:"",done:false}]));
+const INIT_HABITS = [
+  {id:1,name:"8000 steps",time:"06:00",isNN:true,status:"pending"},
+  {id:2,name:"Checking the stock market",    time:"06:45",isNN:true,status:"pending"},
+  {id:3,name:"Read a chapter in the book",   time:"07:30",isNN:false,status:"pending"},
+  {id:4,name:"Physiothrapy",      time:"08:00",isNN:false,status:"pending"},
+  {id:5,name:"Strength training",time:"22:00",isNN:false,status:"pending"},
+  {id:6,name:"Eating healthy",       time:"21:30",isNN:false,status:"pending"},
+];
+const INIT_GOALS = [
+  {id:1,title:"Build 7-figure business",color:"am",monthlyGoals:{...mkMo(),
+    1:{text:"Validate offer with 10 customers",done:true},2:{text:"Hit $5K MRR",done:true},
+    3:{text:"Hire first contractor",done:false},4:{text:"Launch paid ads",done:false}}},
+  {id:2,title:"Peak physical condition",color:"em",monthlyGoals:{...mkMo(),
+    1:{text:"Establish morning routine",done:true},2:{text:"Run 5K under 25 min",done:true},
+    3:{text:"10% body fat target",done:false}}},
+  {id:3,title:"Master stoic philosophy",color:"vi",monthlyGoals:{...mkMo(),
+    1:{text:"Read Meditations",done:true},2:{text:"Daily reflection journal",done:false}}},
+];
+
+/* ── UTILS ───────────────────────────────────────────── */
+const ypct = () => { const n=new Date(),s=new Date(n.getFullYear(),0,1),e=new Date(n.getFullYear()+1,0,1); return (n-s)/(e-s)*100; };
+const doy  = () => { const n=new Date(); return Math.ceil((n-new Date(n.getFullYear(),0,1))/86400000); };
+const pf   = () => { const ua=navigator.userAgent||""; return /iPhone|iPad|iPod/.test(ua)?"ios":/Android/.test(ua)?"android":"web"; };
+const pfL  = () => pf()==="ios"?"iPhone Calendar":pf()==="android"?"Samsung Calendar":"Device Calendar";
+const pfI  = () => pf()==="ios"?"🍎":pf()==="android"?"📱":"📅";
+const today= () => { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
+const endT = (t,d) => { const[h,m]=t.split(":").map(Number),e=new Date(2000,0,1,h,m+d); return `${String(e.getHours()).padStart(2,"0")}:${String(e.getMinutes()).padStart(2,"0")}`; };
+const wrapTxt = (t,mx=11) => { const w=t.split(" ");const L=[];let l="";for(const x of w){if((l+x).length>mx&&l){L.push(l.trim());l=x+" ";if(L.length>=2)break;}else l+=x+" ";}if(l.trim()&&L.length<2)L.push(l.trim());return L.slice(0,2).map(s=>s.length>13?s.slice(0,12)+"…":s); };
+const genreHex = g => { const m={"self-help":"#2dd4a0","psychology":"#7c6ef8","business":"#f5a623","finance":"#f5a623","history":"#f97136","philosophy":"#38b2f8","science":"#38b2f8","biography":"#f06292","fiction":"#a78bfa","thriller":"#f06292","leadership":"#2dd4a0","health":"#2dd4a0","motivation":"#e4b84a","economics":"#f5a623","politics":"#f97136","spirituality":"#38b2f8"}; if(!g)return"#7c6ef8"; return m[g.toLowerCase()]||"#7c6ef8"; };
+const genreCss = g => { const m={"self-help":"var(--em)","psychology":"var(--p)","business":"var(--am)","finance":"var(--am)","history":"var(--or)","philosophy":"var(--sk)","science":"var(--sk)","biography":"var(--ro)","fiction":"var(--p)","thriller":"var(--ro)","leadership":"var(--em)","health":"var(--em)","motivation":"var(--gold)","economics":"var(--am)","spirituality":"var(--sk)"}; if(!g)return"var(--t3)"; return m[g.toLowerCase()]||"var(--t3)"; };
+
+/* ── CALENDAR ────────────────────────────────────────── */
+function openCalendarEvent(name, dateStr, timeStr, dur) {
+  const [y,mo,d]=dateStr.split("-").map(Number),[h,m]=timeStr.split(":").map(Number);
+  const start=new Date(y,mo-1,d,h,m), end=new Date(start.getTime()+dur*60000);
+  if(pf()==="android"){
+    const a=document.createElement("a");
+    a.href=`intent://EDIT#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir%2Fevent;S.title=${encodeURIComponent(name)};l.beginTime=${start.getTime()};l.endTime=${end.getTime()};S.description=${encodeURIComponent("Non-Negotiable — The Vanguard")};S.allDay=false;package=com.samsung.android.calendar;end`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);return;
+  }
+  const f=x=>`${x.getFullYear()}${String(x.getMonth()+1).padStart(2,"0")}${String(x.getDate()).padStart(2,"0")}T${String(x.getHours()).padStart(2,"0")}${String(x.getMinutes()).padStart(2,"0")}00`;
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Vanguard//EN","CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",`UID:vg-${Date.now()}@app`,`DTSTART:${f(start)}`,`DTEND:${f(end)}`,
+    `SUMMARY:${name}`,"DESCRIPTION:Non-Negotiable — The Vanguard","STATUS:CONFIRMED",
+    "BEGIN:VALARM","TRIGGER:-PT10M","ACTION:DISPLAY",`DESCRIPTION:${name} starting soon`,
+    "END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+  const url=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+  const a=document.createElement("a");a.href=url;a.download=`${name.replace(/[^a-z0-9]/gi,"_")}.ics`;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1200);
+}
+
+// ── Google Calendar API ──────────────────────────────────────────────────────
+let _gapiReady = false;
+let _tokenClient = null;
+let _accessToken = null;
+let _tokenExpiry = 0;
+
+function initGoogleCalendar(apiKey, clientId) {
+  return new Promise((resolve, reject) => {
+    if (!window.gapi || !window.google) { reject(new Error("Google scripts not loaded")); return; }
+    gapi.load('client', async () => {
+      try {
+        await gapi.client.init({ apiKey, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'] });
+        _tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'https://www.googleapis.com/auth/calendar.events',
+          callback: () => {}
+        });
+        _gapiReady = true;
+        resolve();
+      } catch(e) { reject(e); }
+    });
+  });
+}
+
+function requestGoogleToken() {
+  return new Promise((resolve, reject) => {
+    if (_accessToken && Date.now() < _tokenExpiry) { resolve(_accessToken); return; }
+    _tokenClient.callback = (resp) => {
+      if (resp.error) { reject(new Error(resp.error)); return; }
+      _accessToken = resp.access_token;
+      _tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      resolve(_accessToken);
+    };
+    _tokenClient.requestAccessToken({ prompt: _accessToken ? '' : 'consent' });
+  });
+}
+
+async function createGoogleCalendarEvent(name, dateStr, timeStr, dur) {
+  const apiKey = localStorage.getItem("vg_google_api_key");
+  const clientId = localStorage.getItem("vg_google_client_id");
+  if (!apiKey || !clientId) throw new Error("Google credentials not configured");
+  if (!_gapiReady) await initGoogleCalendar(apiKey, clientId);
+  await requestGoogleToken();
+  const [y,mo,d] = dateStr.split("-").map(Number);
+  const [h,m] = timeStr.split(":").map(Number);
+  const start = new Date(y, mo-1, d, h, m);
+  const end = new Date(start.getTime() + dur * 60000);
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const resp = await gapi.client.calendar.events.insert({
+    calendarId: 'primary',
+    resource: {
+      summary: name,
+      description: 'Non-Negotiable — The Vanguard',
+      start: { dateTime: start.toISOString(), timeZone: tz },
+      end: { dateTime: end.toISOString(), timeZone: tz },
+      reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 10 }] }
+    }
+  });
+  return resp.result;
+}
+
+/* ── AI CALLS ────────────────────────────────────────── */
+async function aiCall(prompt, maxTokens=600) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
+    body: JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+  });
+  if(!r.ok){const t=await r.text().catch(()=>"");throw new Error(`HTTP ${r.status}: ${t.slice(0,80)}`);}
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.content.filter(c=>c.type==="text").map(c=>c.text).join("").trim();
+}
+
+async function searchBooksAI(q) {
+  const raw = await aiCall(
+    `A user is typing to find a book. Their input (possibly incomplete, vague, or a description): "${q}"\n\nInfer what book(s) they most likely mean and return the best matches.\nReturn ONLY a JSON array, no markdown:\n[{"title":"Exact Book Title","author":"Full Author Name","year":"2024","genre":"Self-Help","desc":"One sentence about this book.","isbn":"9780525559474"}]\nRules:\n- Think carefully: partial words, descriptions, themes, or author fragments should all resolve to real books\n- isbn: the real ISBN-13 of the most common edition, digits only, no hyphens — used to load cover art so it MUST be correct\n- genre must be one of: Self-Help, Psychology, Business, Finance, History, Philosophy, Science, Biography, Fiction, Thriller, Leadership, Health, Spirituality, Economics\n- Only real published books — up to 6 results, best match first\nJSON array only, nothing else.`,
+    650
+  );
+  const m = raw.match(/\[[\s\S]*\]/);
+  if(!m) return [];
+  try { return JSON.parse(m[0]); } catch { return []; }
+}
+
+async function searchGoogleBooks(q) {
+  const apiKey = localStorage.getItem("vg_google_api_key");
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8&langRestrict=en${apiKey?`&key=${apiKey}`:""}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Google Books request failed");
+  const data = await res.json();
+  if (!data.items) return [];
+  return data.items.map(item => {
+    const v = item.volumeInfo || {};
+    const ids = v.industryIdentifiers || [];
+    const isbn = (ids.find(x=>x.type==="ISBN_13") || ids.find(x=>x.type==="ISBN_10") || {}).identifier || "";
+    const thumb = (v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || "").replace("http://","https://");
+    const cat = (v.categories||[])[0] || "";
+    const genre = cat.split(/[/&]/)[0].trim();
+    return {
+      title: v.title || "",
+      author: (v.authors||[]).join(", "),
+      year: (v.publishedDate||"").slice(0,4),
+      genre,
+      desc: v.description ? v.description.slice(0,160)+(v.description.length>160?"…":"") : "",
+      isbn,
+      thumbnail: thumb,
+      color: genreHex(genre.toLowerCase())
+    };
+  }).filter(b => b.title);
+}
+
+async function generateBookAI(title, author) {
+  const raw = await aiCall(
+    `Analyze the book: "${title}"${author?` by ${author}`:""}\n\nReturn ONLY a JSON object:\n{"summary":"2-3 paragraph overview.","tips":["Tip 1","Tip 2","Tip 3","Tip 4","Tip 5","Tip 6","Tip 7","Tip 8"],"chapters":[{"title":"Ch name","summary":"2-3 sentence summary."}]}\nRules: summary=2-3 paragraphs, tips=6-8 actionable insights, chapters=all major chapters up to 15 with accurate titles. JSON only.`,
+    4000
+  );
+  const m = raw.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error("No JSON in response");
+  return JSON.parse(m[0]);
+}
+
+/* ── SVG NETWORK ─────────────────────────────────────── */
+const NS = "http://www.w3.org/2000/svg";
+const svgE=(t,a={})=>{const e=document.createElementNS(NS,t);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,v));return e;};
+const svgT=(p,x,y,txt,a={})=>{const e=svgE("text",{x,y,"text-anchor":"middle","dominant-baseline":"middle",...a});e.textContent=txt;p.appendChild(e);return e;};
+const VW=390,VH=630,CX=195,CY=330;
+const goalPos=(i,n)=>{if(n<=1)return{x:CX,y:CY};const wb=[0,.11,-.07,.14,-.04,.09,-.13,.07,-.11,.05,-.08,.06],rw=[0,7,-5,9,-3,6,-7,5,-9,4,-6,8];const ang=(i/n)*Math.PI*2-Math.PI/2+(wb[i%12]||0),r=(n<=2?108:n<=4?120:n<=6?132:144)+(rw[i%12]||0);return{x:CX+r*Math.cos(ang),y:CY+r*Math.sin(ang)};};
+const moPos=m=>{const rw=[0,7,-6,9,-4,8,-7,6,-8,5,-6,7];const ang=((m-1)/12)*Math.PI*2-Math.PI/2;return{x:CX+(155+(rw[(m-1)%12]||0))*Math.cos(ang),y:CY+(155+(rw[(m-1)%12]||0))*Math.sin(ang)};};
+const AMB=Array.from({length:72},(_,i)=>({x:((i*137.5+22)%366)+12,y:((i*97.3+18)%590)+20,r:i%5===0?1.3:i%3===0?.8:.45,o:i%7===0?.2:i%5===0?.13:i%3===0?.08:.04,sp:2.4+((i*.18)%1.3)}));
+const AMB_E=Array.from({length:26},(_,i)=>{const a=AMB[i*2%72],b=AMB[(i*2+9)%72];return{x1:a.x,y1:a.y,x2:b.x,y2:b.y};});
+
+function drawNetwork(svg,goals,sel,onGoal,onMonth){
+  while(svg.lastChild&&svg.lastChild.tagName!=="defs")svg.removeChild(svg.lastChild);
+  svg.appendChild(svgE("rect",{width:VW,height:VH,fill:"url(#bg-g)"}));
+  svg.appendChild(svgE("rect",{width:VW,height:VH,fill:"url(#dotgrid)",opacity:".85"}));
+  AMB_E.forEach(e=>svg.appendChild(svgE("line",{x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2,stroke:"rgba(124,110,248,.2)","stroke-width":".4",opacity:".06"})));
+  AMB.forEach((p,i)=>{const c=svgE("circle",{cx:p.x,cy:p.y,r:p.r,fill:"rgba(150,140,255,.6)",opacity:p.o});c.style.animation=`nodePulse ${p.sp}s ease-in-out ${(i*.08)%2}s infinite`;svg.appendChild(c);});
+  if(sel===null) drawOverview(svg,goals,onGoal);
+  else{const g=goals.find(x=>x.id===sel);if(g)drawExpanded(svg,g,goals,onGoal,onMonth);}
+}
+function drawOverview(svg,goals,onGoal){
+  [50,40].forEach((r,i)=>{const c=svgE("circle",{cx:CX,cy:CY,r,fill:"none",stroke:"rgba(124,110,248,.1)","stroke-width":i===0?".7":"1.1"});if(i===0)c.style.animation="nodePulse 4s ease-in-out infinite";svg.appendChild(c);});
+  if(goals.length>=3)goals.forEach((g,i)=>{const p1=goalPos(i,goals.length),p2=goalPos((i+1)%goals.length,goals.length);svg.appendChild(svgE("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:"rgba(100,90,220,.18)","stroke-width":".5","stroke-dasharray":"3 13"}));});
+  goals.forEach((g,i)=>{const p=goalPos(i,goals.length),col=GC[g.color].hex;const mx=(CX+p.x)/2,my=(CY+p.y)/2;const path=svgE("path",{d:`M ${CX} ${CY} Q ${mx+(p.y-CY)*.09} ${my-(p.x-CX)*.09} ${p.x} ${p.y}`,stroke:col,"stroke-width":".85",fill:"none",opacity:".32","stroke-dasharray":"4 8"});path.classList.add("de");svg.appendChild(path);});
+  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:30,fill:"rgba(10,10,22,.94)",stroke:"rgba(124,110,248,.3)","stroke-width":"1.5",filter:"url(#gf-hub)"}));
+  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:22,fill:"none",stroke:"rgba(124,110,248,.12)","stroke-width":"1"}));
+  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:14,fill:"rgba(255,255,255,.04)",stroke:"rgba(255,255,255,.1)","stroke-width":"1"}));
+  svgT(svg,CX,CY-4,new Date().getFullYear(),{fill:"rgba(200,195,255,.8)","font-family":"'Oxanium',sans-serif","font-size":"13","font-weight":"700","letter-spacing":"2"});
+  const tG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.text).length,0);
+  const dG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,0);
+  svgT(svg,CX,CY+12,`${dG}/${tG||0}`,{fill:"rgba(124,110,248,.5)","font-family":"'JetBrains Mono',monospace","font-size":"8"});
+  goals.forEach((g,i)=>{
+    const p=goalPos(i,goals.length),c=GC[g.color];
+    const done=Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,tot=Object.values(g.monthlyGoals).filter(m=>m.text).length;
+    const pct=tot?Math.round(done/tot*100):0,R=21;
+    const grp=svgE("g");grp.style.cursor="pointer";grp.addEventListener("click",()=>onGoal(g.id));
+    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R+7,fill:"none",stroke:c.hex,"stroke-width":".5",opacity:".16"}));
+    if(pct>0){const ci=2*Math.PI*(R+4);grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R+4,fill:"none",stroke:c.hex,"stroke-width":"1.2","stroke-dasharray":`${ci*pct/100} ${ci}`,"stroke-dashoffset":ci*.25,"stroke-linecap":"round",opacity:".55"}));}
+    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R,fill:"rgba(9,9,20,.94)",stroke:c.hex,"stroke-width":"1.4",filter:`url(#${c.gf})`}));
+    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R*.62,fill:`${c.hex}18`,stroke:"none"}));
+    grp.appendChild(svgE("circle",{cx:p.x-R*.2,cy:p.y-R*.2,r:R*.22,fill:"rgba(255,255,255,.07)",stroke:"none"}));
+    const ang=Math.atan2(p.y-CY,p.x-CX),lx=p.x+Math.cos(ang)*(R+21),ly=p.y+Math.sin(ang)*(R+21);
+    const anch=p.x>CX+10?"start":p.x<CX-10?"end":"middle";
+    const lines=wrapTxt(g.title,11);
+    lines.forEach((line,li)=>svgT(grp,lx,ly+(lines.length>1?li===0?-7:7:0),line,{fill:c.hex,"font-family":"'Plus Jakarta Sans',sans-serif","font-size":"9","font-weight":"700","text-anchor":anch,opacity:".9"}));
+    if(tot>0)svgT(grp,p.x,p.y,`${pct}%`,{fill:c.hex,"font-family":"'JetBrains Mono',monospace","font-size":"7.5",opacity:".8"});
+    svg.appendChild(grp);
+  });
+  if(!goals.length){svgT(svg,CX,CY+35,"NO GOALS YET",{fill:"rgba(100,90,200,.2)","font-family":"'Oxanium',sans-serif","font-size":"16","letter-spacing":"4"});svgT(svg,CX,CY+56,"TAP + NEW GOAL",{fill:"rgba(100,90,200,.15)","font-family":"'JetBrains Mono',monospace","font-size":"9","letter-spacing":"2"});}
+}
+function drawExpanded(svg,g,goals,onGoal,onMonth){
+  const c=GC[g.color],curM=new Date().getMonth()+1;
+  const done=Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,tot=Object.values(g.monthlyGoals).filter(m=>m.text).length;
+  const pct=tot?Math.round(done/tot*100):0;
+  [54,45].forEach((r,i)=>{const ring=svgE("circle",{cx:CX,cy:CY,r,fill:"none",stroke:c.hex,"stroke-width":i===0?".55":"1",opacity:i===0?".1":".2"});if(i===0)ring.style.animation="nodePulse 3.5s ease-in-out infinite";svg.appendChild(ring);});
+  for(let m=1;m<=12;m++){const mp=moPos(m),mg=g.monthlyGoals[m],has=!!mg.text;const mx=(CX+mp.x)/2+(mp.y-CY)*.05,my=(CY+mp.y)/2-(mp.x-CX)*.05;const path=svgE("path",{d:`M ${CX} ${CY} Q ${mx} ${my} ${mp.x} ${mp.y}`,stroke:c.hex,"stroke-width":has?".95":".32",fill:"none",opacity:mg.done&&has?".6":has?".28":".09"});if(mg.done&&has){path.setAttribute("stroke-dasharray","5 7");path.classList.add("de");}else if(!has)path.setAttribute("stroke-dasharray","2 11");svg.appendChild(path);}
+  if(pct>0){const ci=2*Math.PI*45;svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:45,fill:"none",stroke:c.hex,"stroke-width":"1.6","stroke-dasharray":`${ci*pct/100} ${ci}`,"stroke-dashoffset":ci*.25,"stroke-linecap":"round",opacity:".5"}));}
+  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:36,fill:"rgba(8,8,18,.96)",stroke:c.hex,"stroke-width":"1.8",filter:`url(#${c.gf})`}));
+  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:26,fill:"none",stroke:c.hex,"stroke-width":".6",opacity:".18"}));
+  svgT(svg,CX,CY-7,new Date().getFullYear(),{fill:c.hex,"font-family":"'Oxanium',sans-serif","font-size":"12","font-weight":"700","letter-spacing":"2",opacity:".9"});
+  svgT(svg,CX,CY+10,`${done}/${tot||0}`,{fill:c.hex,"font-family":"'JetBrains Mono',monospace","font-size":"9",opacity:".7"});
+  for(let m=1;m<=12;m++){
+    const mp=moPos(m),mg=g.monthlyGoals[m],has=!!mg.text,isDone=mg.done&&has,isCur=m===curM,R=17;
+    const grp=svgE("g");grp.style.cursor="pointer";grp.addEventListener("click",()=>onMonth(g.id,m));
+    if(isCur){const pulse=svgE("circle",{cx:mp.x,cy:mp.y,r:R+5,fill:"none",stroke:c.hex,"stroke-width":"1"});pulse.style.animation="orbitRing 2.6s ease-in-out infinite";grp.appendChild(pulse);}
+    grp.appendChild(svgE("circle",{cx:mp.x,cy:mp.y,r:R,fill:isDone?`${c.hex}1c`:"rgba(8,8,18,.92)",stroke:isDone?c.hex:isCur?c.hex:has?`${c.hex}60`:"rgba(80,70,160,.2)","stroke-width":isDone?"1.6":isCur?"1.8":has?"1.1":".5",filter:isDone||isCur?`url(#${c.gf})`:"none",opacity:has?"1":".5"}));
+    const ang=Math.atan2(mp.y-CY,mp.x-CX),lx=mp.x+Math.cos(ang)*(R+15),ly=mp.y+Math.sin(ang)*(R+15);
+    svgT(grp,lx,ly,MONTHS[m-1],{fill:isDone?c.hex:isCur?"rgba(210,205,255,.9)":has?"rgba(130,125,200,.72)":"rgba(75,70,140,.45)","font-family":"'JetBrains Mono',monospace","font-size":isCur?"8.5":"7.5","font-weight":isCur?"600":"400","text-anchor":mp.x>CX+10?"start":mp.x<CX-10?"end":"middle","letter-spacing":".5"});
+    if(has)grp.appendChild(svgE("circle",{cx:mp.x,cy:mp.y,r:isDone?5:3.2,fill:isDone?c.hex:"rgba(100,95,200,.38)",stroke:"none"}));
+    else svgT(grp,mp.x,mp.y,"+",{fill:"rgba(75,70,140,.4)","font-family":"'JetBrains Mono',monospace","font-size":"10"});
+    svg.appendChild(grp);
+  }
+  goals.filter(x=>x.id!==g.id).slice(0,4).forEach((og,i)=>{
+    const corners=[{x:30,y:95},{x:VW-30,y:95},{x:30,y:VH-54},{x:VW-30,y:VH-54}];
+    const cp=corners[i],oc=GC[og.color];
+    const cg=svgE("g");cg.style.cursor="pointer";cg.addEventListener("click",()=>onGoal(og.id));
+    cg.appendChild(svgE("circle",{cx:cp.x,cy:cp.y,r:12,fill:"rgba(8,8,18,.94)",stroke:oc.hex,"stroke-width":"1.1",filter:`url(#${oc.gf})`,opacity:".62"}));
+    svgT(cg,cp.x,cp.y,og.title.slice(0,3).toUpperCase(),{fill:oc.hex,"font-family":"'JetBrains Mono',monospace","font-size":"6.5",opacity:".78"});
+    svg.appendChild(cg);
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   SHARED UI
+════════════════════════════════════════════════════ */
+const C = {
+  app:{position:"relative",zIndex:1,minHeight:"100dvh"},
+  sb:{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:800,pointerEvents:"none",padding:"calc(var(--sat) + 10px) 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"},
+  nav:{position:"fixed",bottom:"calc(20px + var(--sab))",left:"50%",transform:"translateX(-50%)",zIndex:700,display:"flex",background:"rgba(10,10,20,.92)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",border:"1px solid rgba(255,255,255,.09)",borderRadius:60,padding:"6px 4px",gap:2,boxShadow:"0 -1px 0 rgba(255,255,255,.05),0 16px 60px rgba(0,0,0,.7),0 4px 20px rgba(0,0,0,.4)"},
+  screen:{paddingTop:"calc(var(--sat) + 50px)",paddingBottom:"calc(94px + var(--sab))",minHeight:"100dvh"},
+  ov:{position:"fixed",inset:0,background:"rgba(4,4,14,.86)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",zIndex:900,animation:"fadeIn .22s ease"},
+  sh:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:1000,background:"rgba(10,10,19,.98)",backdropFilter:"blur(48px)",WebkitBackdropFilter:"blur(48px)",borderTop:"1px solid rgba(255,255,255,.1)",borderRadius:"28px 28px 0 0",paddingBottom:"calc(var(--sab) + 28px)",maxHeight:"93dvh",overflowY:"auto",animation:"slideUp .34s cubic-bezier(.22,1,.36,1)",boxShadow:"0 -1px 0 rgba(255,255,255,.06),0 -24px 80px rgba(0,0,0,.85),0 -2px 40px rgba(124,110,248,.06)"},
+  shBody:{padding:"20px 22px"},
+  flabel:{display:"block",fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".22em",textTransform:"uppercase",marginBottom:9},
+  finput:{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,.04)",border:"1px solid var(--e0)",borderRadius:16,color:"var(--t6)",fontFamily:"var(--fb)",fontSize:15,fontWeight:500,caretColor:"var(--p)",marginBottom:18,transition:"all .2s",display:"block"},
+  fta:{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,.04)",border:"1px solid var(--e0)",borderRadius:16,color:"var(--t4)",fontFamily:"var(--fb)",fontSize:14,lineHeight:1.7,caretColor:"var(--p)",marginBottom:18},
+  btnPri:{width:"100%",padding:15,background:"linear-gradient(135deg,#5d50e6 0%,#7c6ef8 45%,#9d85ff 80%,#8b76f5 100%)",borderRadius:16,fontFamily:"var(--fd)",fontSize:15,letterSpacing:".1em",color:"#fff",cursor:"pointer",boxShadow:"0 2px 0 rgba(255,255,255,.08) inset,0 6px 32px rgba(109,95,245,.4),0 1px 0 rgba(255,255,255,.12) inset",display:"flex",alignItems:"center",justifyContent:"center",gap:8,border:"1px solid rgba(255,255,255,.1)"},
+  btnGhost:{padding:"9px 18px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:10,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".14em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",boxShadow:"0 1px 0 rgba(255,255,255,.06) inset"},
+  btnAcc:{padding:"9px 18px",background:"linear-gradient(135deg,rgba(124,110,248,.18),rgba(124,110,248,.1))",border:"1px solid rgba(124,110,248,.3)",borderRadius:10,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".14em",textTransform:"uppercase",color:"var(--p)",cursor:"pointer",boxShadow:"0 0 0 1px rgba(124,110,248,.08) inset"},
+  btnDng:{padding:"13px 20px",background:"rgba(240,98,146,.08)",border:"1px solid rgba(240,98,146,.2)",borderRadius:16,color:"var(--ro)",fontFamily:"var(--fm)",fontSize:9,letterSpacing:".14em",textTransform:"uppercase",cursor:"pointer",flexShrink:0},
+};
+
+const Lbl = ({children,style:sx})=>(
+  <div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t2)",letterSpacing:".22em",textTransform:"uppercase",display:"flex",alignItems:"center",gap:10,...sx}}>
+    <div style={{width:2,height:10,borderRadius:2,background:"linear-gradient(to bottom,var(--p),rgba(124,110,248,.2))",flexShrink:0}}/>
+    {children}<div style={{flex:1,height:1,background:"linear-gradient(to right,rgba(255,255,255,.07),transparent)"}}/>
+  </div>
+);
+const Tag = ({cls,children})=>{
+  const styles={p:"color:var(--p);background:var(--p2);border:1px solid rgba(124,110,248,.22)",em:"color:var(--em);background:var(--em2);border:1px solid rgba(45,212,160,.22)",am:"color:var(--am);background:var(--am1);border:1px solid rgba(245,166,35,.22)",ro:"color:var(--ro);background:var(--ro1);border:1px solid rgba(240,98,146,.22)",sk:"color:var(--sk);background:var(--sk1);border:1px solid rgba(56,178,248,.22)",gold:"color:var(--gold);background:var(--gold1);border:1px solid rgba(228,184,74,.22)",dim:"color:var(--t3);background:var(--g0);border:1px solid var(--e0)"};
+  const obj={};(styles[cls]||styles.dim).split(";").forEach(p=>{const[k,v]=p.split(":");if(k&&v){const key=k.trim().replace(/-([a-z])/g,(_,c)=>c.toUpperCase());obj[key]=v.trim();}});
+  return <span style={{display:"inline-flex",alignItems:"center",fontFamily:"var(--fm)",fontSize:7.5,letterSpacing:".1em",textTransform:"uppercase",padding:"3px 9px",borderRadius:60,boxShadow:"0 0 0 1px currentColor inset",...obj}}>{children}</span>;
+};
+const Sheet = ({open,onClose,children,sx={}})=> open?(<><div style={C.ov} onClick={onClose}/><div style={{...C.sh,...sx}}>{children}</div></>):null;
+const ShDrag = ()=><div style={{display:"flex",justifyContent:"center",padding:"14px 0 2px"}}><div style={{width:36,height:4,borderRadius:4,background:"linear-gradient(to right,rgba(255,255,255,.07),rgba(255,255,255,.14),rgba(255,255,255,.07))"}}/></div>;
+const ShHdr = ({title,sub,subColor="#7c6ef8",onClose,right})=>(
+  <div style={{padding:"14px 22px 18px",borderBottom:"1px solid var(--e0)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+    <div>
+      <div style={{fontFamily:"var(--fd)",fontSize:24,fontWeight:800,color:"var(--t6)",letterSpacing:".04em"}}>{title}</div>
+      {sub&&<div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:".18em",textTransform:"uppercase",marginTop:4,color:subColor}}>{sub}</div>}
+    </div>
+    {right||<button style={{width:36,height:36,borderRadius:12,background:"var(--g2)",border:"1px solid var(--e0)",color:"var(--t2)",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={onClose}>×</button>}
+  </div>
+);
+const Toast = ({msg})=> msg?<div style={{position:"fixed",bottom:"calc(96px + var(--sab))",left:"50%",transform:"translateX(-50%)",background:"rgba(12,12,22,.98)",backdropFilter:"blur(32px)",border:"1px solid rgba(255,255,255,.1)",borderRadius:16,padding:"11px 20px",fontFamily:"var(--fm)",fontSize:11,color:"var(--t5)",letterSpacing:".06em",zIndex:1200,whiteSpace:"nowrap",boxShadow:"0 8px 48px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.08) inset",animation:"fadeUp .3s ease",display:"flex",alignItems:"center",gap:8}}><div style={{width:3,height:16,borderRadius:2,background:"var(--em)",flexShrink:0}}/>{msg}</div>:null;
+
+/* ── YEAR BAR ────────────────────────────────────────── */
+function YearBar() {
+  const pct=ypct(),d=doy(),cm=new Date().getMonth();
+  const [w,setW]=useState(0);
+  useEffect(()=>{const t=setTimeout(()=>setW(pct),150);return()=>clearTimeout(t);},[]);
+  return (
+    <div style={{padding:"16px 22px 20px",borderBottom:"1px solid var(--e0)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}>
+        <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".22em",textTransform:"uppercase"}}>Year Progress</span>
+        <div style={{display:"flex",alignItems:"baseline",gap:10}}>
+          <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)"}}>Day {d} · {365-d} left</span>
+          <span style={{fontFamily:"var(--fd)",fontSize:28,fontWeight:800,background:"linear-gradient(135deg,var(--p),#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>{pct.toFixed(1)}%</span>
+        </div>
+      </div>
+      <div style={{height:4,background:"rgba(255,255,255,.05)",borderRadius:4,position:"relative"}}>
+        <div style={{height:"100%",borderRadius:4,background:"linear-gradient(90deg,#6d5ff5,var(--p),#c084fc)",boxShadow:"0 0 14px rgba(124,110,248,.5)",width:`${w}%`,transition:"width 1.4s cubic-bezier(.22,1,.36,1)",position:"relative"}}>
+          <div style={{position:"absolute",right:-2,top:-4,width:4,height:12,background:"#fff",borderRadius:3,boxShadow:"0 0 10px rgba(124,110,248,.9)"}}/>
+        </div>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+        {["J","F","M","A","M","J","J","A","S","O","N","D"].map((m,i)=>(
+          <span key={i} style={{fontFamily:"var(--fm)",fontSize:7,color:i===cm?"var(--p)":"#1a1a30",fontWeight:i===cm?700:400}}>{m}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── HABIT ROW ───────────────────────────────────────── */
+function HabitRow({h,idx,editMode,onCycle,onRename,onToggleNN,onDelete,showTime=false}) {
+  const [nm,setNm]=useState(h.name);
+  const sc={complete:{border:"var(--em)",bg:"var(--em1)",color:"var(--em)"},failed:{border:"var(--ro)",bg:"var(--ro1)",color:"var(--ro)"},pending:{border:"var(--t0)",bg:"none",color:"transparent"}}[h.status]||{border:"var(--t0)",bg:"none",color:"transparent"};
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:13,padding:"14px 22px",background:h.status==="complete"?"rgba(45,212,160,.03)":"rgba(8,8,15,.45)",borderBottom:"1px solid rgba(255,255,255,.04)",position:"relative",animationDelay:`${idx*.03}s`,transition:"background .3s ease"}} className="au">
+      <div style={{position:"absolute",left:0,top:8,bottom:8,width:3,borderRadius:"0 3px 3px 0",background:h.isNN?"linear-gradient(to bottom,var(--em),rgba(45,212,160,.15))":h.status==="failed"?"var(--ro)":h.status==="complete"?"linear-gradient(to bottom,var(--em),rgba(45,212,160,.1))":"rgba(255,255,255,.06)",boxShadow:(h.isNN||h.status==="complete")?"2px 0 12px rgba(45,212,160,.15)":"none",transition:"all .3s ease"}}/>
+      {editMode?<>
+        <input value={nm} onChange={e=>setNm(e.target.value)} onBlur={()=>onRename(h.id,nm)} style={{flex:1,background:"rgba(124,110,248,.08)",border:"1px solid rgba(124,110,248,.2)",borderRadius:10,padding:"7px 12px",color:"var(--t6)",fontSize:14,caretColor:"var(--p)"}}/>
+        <button onClick={()=>onToggleNN(h.id)} style={{padding:"4px 10px",border:"1px solid var(--e0)",borderRadius:20,fontFamily:"var(--fm)",fontSize:7,background:h.isNN?"var(--em1)":"none",borderColor:h.isNN?"rgba(45,212,160,.3)":"var(--e0)",color:h.isNN?"var(--em)":"var(--t1)",cursor:"pointer"}}>{h.isNN?"NN ✓":"NN"}</button>
+        <button onClick={()=>onDelete(h.id)} style={{color:"var(--ro)",fontSize:20,cursor:"pointer",background:"none",border:"none",lineHeight:1}}>×</button>
+      </>:<>
+        <button onClick={()=>onCycle(h.id)} style={{width:28,height:28,borderRadius:"50%",flexShrink:0,border:`1.5px solid ${sc.border}`,background:h.status==="complete"?"linear-gradient(135deg,var(--em),rgba(45,212,160,.6))":h.status==="failed"?"linear-gradient(135deg,var(--ro),rgba(240,98,146,.6))":"rgba(255,255,255,.03)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:11,color:h.status==="pending"?"transparent":"#fff",transition:"all .22s cubic-bezier(.22,1,.36,1)",boxShadow:h.status==="complete"?"0 0 0 3px rgba(45,212,160,.12),0 2px 8px rgba(45,212,160,.2)":h.status==="failed"?"0 0 0 3px rgba(240,98,146,.12)":"none"}}>{h.status==="complete"?"✓":h.status==="failed"?"✕":""}</button>
+        {h.isNN&&<Tag cls="em">NN</Tag>}
+        <span style={{flex:1,fontSize:14,fontWeight:500,color:h.status==="complete"?"var(--t2)":"var(--t5)",textDecoration:h.status==="complete"?"line-through":"none",opacity:h.status==="failed"?.36:1}}>{h.name}</span>
+        {showTime&&<span style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",flexShrink:0,letterSpacing:".06em"}}>{h.time}</span>}
+      </>}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════
+   HOME SCREEN
+════════════════════════════════════════════════════ */
+function HomeScreen({habits,goals,onCycle,onSync}) {
+  const nn=habits.filter(h=>h.isNN),done=habits.filter(h=>h.status==="complete").length,nnDone=nn.filter(h=>h.status==="complete").length;
+  const tG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.text).length,0);
+  const dG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,0);
+  const n=new Date(),DAYS=["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"],MOS=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  return (
+    <div style={C.screen}>
+      <div style={{padding:"22px 22px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+        <div style={{fontFamily:"var(--fd)",fontSize:44,fontWeight:800,color:"var(--t6)",lineHeight:.88,letterSpacing:".02em"}}>
+          THE<div style={{background:"linear-gradient(135deg,#818cf8,#67e8f9 60%,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>VANGUARD</div>
+        </div>
+        <div style={{textAlign:"right",paddingBottom:5}}>
+          <div style={{fontFamily:"var(--fd)",fontSize:10,color:"var(--p)",letterSpacing:".22em"}}>{DAYS[n.getDay()]}</div>
+          <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".1em",marginTop:5}}>{MOS[n.getMonth()]} {n.getDate()}, {n.getFullYear()}</div>
+        </div>
+      </div>
+      <div style={{margin:"20px 22px 0",height:1,background:"linear-gradient(to right,transparent,rgba(124,110,248,.4),rgba(45,212,160,.25),transparent)"}}/>
+      <YearBar/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,margin:"18px 22px 0"}}>
+        {[{v:`${done}/${habits.length}`,l:"Done Today",cl:"var(--p)"},{v:`${nnDone}/${nn.length}`,l:"Non-Neg",cl:"var(--em)"},{v:tG?`${dG}/${tG}`:"—",l:"Goals Done",cl:"var(--gold)"}].map(({v,l,cl})=>(
+          <div key={l} style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,padding:"16px 14px 14px",position:"relative",overflow:"hidden",color:cl}}>
+            <div style={{position:"absolute",top:0,left:12,right:12,height:1.5,background:"currentColor",opacity:.4,borderRadius:"0 0 4px 4px"}}/>
+            <div style={{fontFamily:"var(--fd)",fontSize:28,fontWeight:800,lineHeight:1}}>{v}</div>
+            <div style={{fontFamily:"var(--fm)",fontSize:7,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",marginTop:8}}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{margin:"22px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Non-Negotiables</Lbl><Tag cls="em">{nnDone}/{nn.length}</Tag></div>
+      <div style={{borderTop:"1px solid var(--e0)"}}>
+        {nn.length===0?<div style={{padding:22,textAlign:"center",fontFamily:"var(--fm)",fontSize:10,color:"var(--t1)"}}>No Non-Negotiables set</div>
+          :nn.map((h,i)=><HabitRow key={h.id} h={h} idx={i} onCycle={onCycle} showTime/>)}
+      </div>
+      <button onClick={onSync} style={{margin:"16px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",width:"calc(100% - 44px)"}}>
+        {pfI()} Sync to {pfL()}
+      </button>
+      <div style={{margin:"22px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Active Goals</Lbl><Tag cls="p">{goals.length} targets</Tag></div>
+      <div style={{borderTop:"1px solid var(--e0)"}}>
+        {goals.slice(0,3).map(g=>{const gc2=GC[g.color],f=Object.values(g.monthlyGoals).filter(m=>m.text&&m.done).length,t=Object.values(g.monthlyGoals).filter(m=>m.text).length;return(
+          <div key={g.id} style={{display:"flex",alignItems:"center",gap:14,padding:"15px 22px",background:"rgba(8,8,15,.55)",borderBottom:"1px solid var(--e0)"}}>
+            <div style={{width:3,borderRadius:3,background:gc2.hex,boxShadow:`0 0 12px ${gc2.hex}55`,alignSelf:"stretch",minHeight:28,flexShrink:0}}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:600,color:"var(--t5)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.title}</div>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".1em"}}>{f}/{t||0} monthly goals done</div>
+            </div>
+            <div style={{fontFamily:"var(--fd)",fontSize:22,fontWeight:800,color:gc2.hex,flexShrink:0}}>{t?Math.round(f/t*100):0}%</div>
+          </div>
+        );})}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════
+   HABITS SCREEN
+════════════════════════════════════════════════════ */
+function HabitsScreen({habits,setHabits,nHid,setNHid,onSync,onSetupExport}) {
+  const [em,setEm]=useState(false);
+  const cyc={pending:"complete",complete:"failed",failed:"pending"};
+  const onCycle=id=>setHabits(h=>h.map(x=>x.id===id?{...x,status:cyc[x.status]}:x));
+  const onRename=(id,v)=>setHabits(h=>h.map(x=>x.id===id?{...x,name:v.trim()||x.name}:x));
+  const onToggleNN=id=>setHabits(h=>h.map(x=>x.id===id?{...x,isNN:!x.isNN}:x));
+  const onDelete=id=>setHabits(h=>h.filter(x=>x.id!==id));
+  const onAdd=isNN=>{setHabits(h=>[...h,{id:nHid,name:"New habit",time:"08:00",isNN,status:"pending"}]);setNHid(n=>n+1);};
+  const nn=habits.filter(h=>h.isNN),reg=habits.filter(h=>!h.isNN);
+  return (
+    <div style={C.screen}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"22px 22px 18px"}}>
+        <div><div style={{fontFamily:"var(--fd)",fontSize:30,fontWeight:800,color:"var(--t6)",letterSpacing:".03em"}}>HABITS</div><Lbl style={{marginTop:4,fontSize:7}}>Daily Operating System</Lbl></div>
+        <div style={{display:"flex",gap:8}}>
+          <button style={{...C.btnGhost,padding:"6px 10px",fontSize:11}} title="Set up WhatsApp auto-sync" onClick={onSetupExport}>📲</button>
+          <button style={{...C.btnGhost,background:em?"rgba(124,110,248,.12)":"rgba(255,255,255,.04)",borderColor:em?"rgba(124,110,248,.3)":"rgba(255,255,255,.08)",color:em?"var(--p)":"var(--t2)",transition:"all .22s ease",boxShadow:em?"0 0 16px rgba(124,110,248,.15)":"none"}} onClick={()=>setEm(x=>!x)}>{em?"DONE":"EDIT"}</button>
+        </div>
+      </div>
+      <YearBar/>
+      <div style={{margin:"20px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Non-Negotiables</Lbl><Tag cls="em">{nn.filter(h=>h.status==="complete").length}/{nn.length}</Tag></div>
+      <div style={{borderTop:"1px solid var(--e0)"}}>{nn.map((h,i)=><HabitRow key={h.id} h={h} idx={i} editMode={em} onCycle={onCycle} onRename={onRename} onToggleNN={onToggleNN} onDelete={onDelete}/>)}</div>
+      {em&&<button onClick={()=>onAdd(true)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"13px 22px",background:"none",border:"none",borderBottom:"1px solid var(--e0)",fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer"}}><span style={{fontSize:16}}>+</span> Add Non-Negotiable</button>}
+      <div style={{margin:"20px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Daily Habits</Lbl><Tag cls="dim">{reg.filter(h=>h.status==="complete").length}/{reg.length}</Tag></div>
+      <div style={{borderTop:"1px solid var(--e0)"}}>{reg.map((h,i)=><HabitRow key={h.id} h={h} idx={i} editMode={em} onCycle={onCycle} onRename={onRename} onToggleNN={onToggleNN} onDelete={onDelete}/>)}</div>
+      {em&&<button onClick={()=>onAdd(false)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"13px 22px",background:"none",border:"none",borderBottom:"1px solid var(--e0)",fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer"}}><span style={{fontSize:16}}>+</span> Add Daily Habit</button>}
+      <button onClick={onSync} style={{margin:"16px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",width:"calc(100% - 44px)"}}>
+        {pfI()} Sync to {pfL()}
+      </button>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════
+   GOALS SCREEN
+════════════════════════════════════════════════════ */
+function GoalsScreen({goals,setGoals,nGid,setNGid,showToast}) {
+  const [sel,setSel]=useState(null);
+  const [editGoal,setEditGoal]=useState(null);
+  const [moSheet,setMoSheet]=useState(null);
+  const svgRef=useRef(null);
+  const dashRef=useRef(null);
+  const onGoal=useCallback(id=>setSel(id),[]);
+  const onMonth=useCallback((gid,m)=>setMoSheet({gid,m}),[]);
+  useEffect(()=>{
+    if(!svgRef.current)return;
+    if(dashRef.current)clearInterval(dashRef.current);
+    let tick=0;
+    drawNetwork(svgRef.current,goals,sel,onGoal,onMonth);
+    dashRef.current=setInterval(()=>{tick++;const off=-(tick*.42)%22;svgRef.current?.querySelectorAll(".de").forEach(e=>e.setAttribute("stroke-dashoffset",off));},55);
+    return()=>clearInterval(dashRef.current);
+  },[goals,sel,onGoal,onMonth]);
+  const yr=new Date().getFullYear();
+  const sg=goals.find(x=>x.id===sel);
+  const gc2=sg?GC[sg.color]:null;
+  const tG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.text).length,0);
+  const dG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,0);
+  return (
+    <div style={{height:"100dvh",padding:0,position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:0,left:0,right:0,zIndex:20,padding:"calc(var(--sat) + 16px) 22px 18px",background:"linear-gradient(to bottom,rgba(8,8,15,.97) 58%,transparent)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div>
+            {!sel?<div style={{fontFamily:"var(--fd)",fontSize:26,fontWeight:800,color:"var(--t6)",letterSpacing:".04em"}}>GOAL <span style={{background:"linear-gradient(135deg,#818cf8,#67e8f9)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>NETWORK</span></div>
+              :<div style={{fontFamily:"var(--fd)",fontSize:26,fontWeight:800,color:"var(--t6)",letterSpacing:".04em"}}>{sg?.title.toUpperCase()}</div>}
+            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",marginTop:5,color:gc2?gc2.hex:"var(--t2)"}}>
+              {!sel?`${goals.length} goals · ${dG}/${tG||0} complete · ${yr}`:`${Object.values(sg.monthlyGoals).filter(m=>m.done&&m.text).length}/${Object.values(sg.monthlyGoals).filter(m=>m.text).length||0} complete · ${gc2.label} · ${yr}`}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,paddingTop:3}}>
+            {sel&&<><button style={C.btnGhost} onClick={()=>setSel(null)}>← BACK</button><button style={{...C.btnGhost,color:gc2.hex,borderColor:`${gc2.hex}44`}} onClick={()=>setEditGoal(goals.find(x=>x.id===sel))}>EDIT</button></>}
+            {!sel&&<button style={C.btnAcc} onClick={()=>setEditGoal({id:null,title:"",color:"vi"})}>+ NEW GOAL</button>}
+          </div>
+        </div>
+      </div>
+      <svg ref={svgRef} viewBox="0 0 390 630" preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block",touchAction:"manipulation"}}>
+        <defs>
+          <pattern id="dotgrid" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".6" fill="rgba(124,110,248,0.18)"/></pattern>
+          <radialGradient id="bg-g" cx="50%" cy="48%" r="72%"><stop offset="0%" stopColor="#0e0e20"/><stop offset="100%" stopColor="#060610"/></radialGradient>
+          {[["gf-vi",".49 0 0 0 0 .43 0 0 0 0 .98 0 0 0 0 0 0 0 1.3 0"],["gf-em",".18 0 0 0 0 .83 0 0 0 0 .63 0 0 0 0 0 0 0 1.3 0"],["gf-am",".96 0 0 0 0 .65 0 0 0 0 .14 0 0 0 0 0 0 0 1.3 0"],["gf-ro",".94 0 0 0 0 .38 0 0 0 0 .57 0 0 0 0 0 0 0 1.3 0"],["gf-sk",".22 0 0 0 0 .7 0 0 0 0 .97 0 0 0 0 0 0 0 1.3 0"],["gf-or",".98 0 0 0 0 .44 0 0 0 0 .21 0 0 0 0 0 0 0 1.3 0"]].map(([id,vals])=>(
+            <filter key={id} id={id} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6" result="b"/><feColorMatrix in="b" type="matrix" values={vals}/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          ))}
+          <filter id="gf-hub" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+      </svg>
+      {editGoal!==null&&<GoalEditSheet goal={editGoal} goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} onClose={()=>setEditGoal(null)} setSel={setSel} toast={showToast}/>}
+      {moSheet&&<MonthSheet gid={moSheet.gid} month={moSheet.m} goals={goals} setGoals={setGoals} onClose={()=>setMoSheet(null)} toast={showToast}/>}
+    </div>
+  );
+}
+function GoalEditSheet({goal,goals,setGoals,nGid,setNGid,onClose,setSel,toast}) {
+  const isNew=!goal.id;
+  const [title,setTitle]=useState(goal.title||"");
+  const [color,setColor]=useState(goal.color||"vi");
+  const save=()=>{if(!title.trim()){toast("Enter a goal title");return;}if(isNew){setGoals(g=>[...g,{id:nGid,title:title.trim(),color,monthlyGoals:mkMo()}]);setNGid(n=>n+1);toast("Goal created");}else{setGoals(g=>g.map(x=>x.id===goal.id?{...x,title:title.trim(),color}:x));toast("Goal updated");}onClose();};
+  const del=()=>{setGoals(g=>g.filter(x=>x.id!==goal.id));setSel(null);toast("Goal deleted");onClose();};
+  return (<Sheet open onClose={onClose}>
+    <ShDrag/><ShHdr title={isNew?"NEW GOAL":"EDIT GOAL"} sub={GC[color]?.label} subColor={GC[color]?.hex} onClose={onClose}/>
+    <div style={C.shBody}>
+      <label style={C.flabel}>Goal Title</label>
+      <input style={C.finput} value={title} onChange={e=>setTitle(e.target.value)} placeholder="What will you conquer this year?" maxLength={60}/>
+      <label style={C.flabel}>Category</label>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:22}}>
+        {Object.entries(GC).map(([k,v])=>(
+          <div key={k} onClick={()=>setColor(k)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:16,border:`1px solid ${color===k?"rgba(255,255,255,.2)":"var(--e0)"}`,cursor:"pointer",background:color===k?"rgba(255,255,255,.07)":"var(--g1)"}}>
+            <div style={{width:11,height:11,borderRadius:"50%",background:v.hex,boxShadow:color===k?`0 0 10px ${v.hex}`:""}}/>
+            <span style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:".12em",textTransform:"uppercase",color:color===k?v.hex:"var(--t2)"}}>{v.label}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:10}}>
+        <button style={{...C.btnPri,flex:1}} onClick={save}>SAVE GOAL</button>
+        {!isNew&&<button style={C.btnDng} onClick={del}>DELETE</button>}
+      </div>
+    </div>
+  </Sheet>);
+}
+function MonthSheet({gid,month,goals,setGoals,onClose,toast}) {
+  const g=goals.find(x=>x.id===gid);const c=GC[g?.color]||GC.vi;const mg=g?.monthlyGoals[month]||{text:"",done:false};
+  const [text,setText]=useState(mg.text||"");
+  const save=()=>{setGoals(gs=>gs.map(x=>x.id!==gid?x:{...x,monthlyGoals:{...x.monthlyGoals,[month]:{...x.monthlyGoals[month],text:text.trim()}}}));onClose();};
+  const clear=()=>{setGoals(gs=>gs.map(x=>x.id!==gid?x:{...x,monthlyGoals:{...x.monthlyGoals,[month]:{text:"",done:false}}}));onClose();};
+  const toggleDone=()=>{const d=!mg.done;setGoals(gs=>gs.map(x=>x.id!==gid?x:{...x,monthlyGoals:{...x.monthlyGoals,[month]:{...x.monthlyGoals[month],done:d}}}));if(d)toast("✓ Monthly goal complete");};
+  return (<Sheet open onClose={save} sx={{borderTopColor:c.hex,boxShadow:`0 -8px 60px rgba(0,0,0,.75),0 0 0 1px ${c.hex}44`}}>
+    <ShDrag/>
+    <div style={{padding:"14px 22px 18px",borderBottom:"1px solid var(--e0)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div><div style={{fontFamily:"var(--fd)",fontSize:24,fontWeight:800,color:"var(--t6)"}}>{MONTHS_F[month-1].toUpperCase()}</div><div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:".18em",textTransform:"uppercase",marginTop:4,color:c.hex}}>{g?.title}</div></div>
+      {mg.text&&<button onClick={toggleDone} style={{padding:"10px 18px",background:mg.done?"var(--em1)":"var(--g1)",border:`1px solid ${mg.done?"rgba(45,212,160,.28)":"var(--e0)"}`,borderRadius:16,color:mg.done?"var(--em)":"var(--t2)",fontFamily:"var(--fm)",fontSize:8,letterSpacing:".14em",textTransform:"uppercase",cursor:"pointer"}}>{mg.done?"✓ DONE":"MARK DONE"}</button>}
+    </div>
+    <div style={C.shBody}>
+      <label style={C.flabel}>Monthly Target</label>
+      <textarea style={{...C.fta,borderColor:`${c.hex}44`,caretColor:c.hex}} rows={3} value={text} onChange={e=>setText(e.target.value)} placeholder="What will you achieve this month?"/>
+      <div style={{display:"flex",gap:10}}>
+        <button style={{...C.btnPri,flex:1,background:`linear-gradient(135deg,${c.hex},${c.hex}99)`,boxShadow:`0 4px 28px ${c.hex}44`}} onClick={save}>SAVE</button>
+        {mg.text&&<button style={C.btnDng} onClick={clear}>CLEAR</button>}
+      </div>
+    </div>
+  </Sheet>);
+}
+
+/* ════════════════════════════════════════════════════
+   LIBRARY SCREEN + BOOK COMPONENTS
+════════════════════════════════════════════════════ */
+function BookCover({book, size=48}) {
+  // Try 3 sources in order: ISBN cover → title cover → styled fallback
+  const isbn   = (book.isbn||"").replace(/\D/g,"");
+  const src1   = isbn   ? `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`          : "";
+  const src2   = book.title||book.name ? `https://covers.openlibrary.org/b/title/${encodeURIComponent((book.title||book.name||"").replace(/ /g,"+"))}-M.jpg` : "";
+  const src3   = book.thumbnail || "";           // Google Books thumbnail if passed through
+  const sources = [src3, src1, src2].filter(Boolean);
+  const [idx, setIdx] = useState(0);
+  const currentSrc = sources[idx] || "";
+
+  const col = genreHex(book.genre) || book.color || BOOK_COLORS[(book.id||1) % BOOK_COLORS.length];
+  const w = size, h = Math.round(size * 1.42);
+  const sp = Math.max(3, Math.round(size / 13));
+  const fs = size < 44 ? 8 : size < 60 ? 10 : 12;
+
+  const onErr = () => {
+    if (idx < sources.length - 1) setIdx(i => i + 1);
+    else setIdx(sources.length); // show fallback
+  };
+  const showImg = currentSrc && idx < sources.length;
+
+  return (
+    <div style={{width:w,height:h,borderRadius:7,flexShrink:0,overflow:"hidden",position:"relative",
+      background:`linear-gradient(150deg,${col}28,${col}0c)`,
+      border:`1px solid ${col}40`,boxShadow:"2px 3px 14px rgba(0,0,0,.45)"}}>
+      {/* Spine */}
+      <div style={{position:"absolute",left:0,top:0,bottom:0,width:sp,
+        background:`linear-gradient(to bottom,${col},${col}bb)`,
+        boxShadow:`1px 0 6px ${col}66`, zIndex:2}}/>
+      {showImg
+        ? <img key={currentSrc} src={currentSrc} alt={book.title||book.name||""}
+            style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}
+            onError={onErr}/>
+        : <>
+            <div style={{position:"absolute",inset:`0 0 ${Math.max(4,Math.round(size/10))}px ${sp}px`,
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+              padding:"6px 6px 4px"}}>
+              <div style={{fontFamily:"var(--fd)",fontSize:fs,fontWeight:800,color:col,textAlign:"center",
+                lineHeight:1.2,wordBreak:"break-word",display:"-webkit-box",
+                WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
+                {book.title||book.name}
+              </div>
+              {book.author && <div style={{fontFamily:"var(--fm)",fontSize:Math.max(6,fs-2),
+                color:`${col}88`,textAlign:"center",letterSpacing:".03em",marginTop:4,
+                overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>
+                {book.author.split(" ").pop()}
+              </div>}
+            </div>
+            <div style={{position:"absolute",bottom:0,left:sp,right:0,
+              height:Math.max(4,Math.round(size/10)),
+              background:`linear-gradient(to right,${col}99,${col}44)`}}/>
+          </>}
+    </div>
+  );
+}
+
+function LibraryScreen({books,setBooks,nBid,setNBid,toast}) {
+  const [filter,setFilter]=useState("all");
+  const [detail,setDetail]=useState(null);
+  const [editBook,setEditBook]=useState(null);
+  const [searchOpen,setSearchOpen]=useState(false);
+  const filtered=filter==="all"?books:books.filter(b=>b.status===filter);
+  const stl=s=>s==="reading"?"Reading":s==="done"?"Done":"Want to Read";
+  const stc=s=>s==="reading"?"sk":s==="done"?"em":"p";
+  const saveBook=data=>{if(data.id){setBooks(b=>b.map(x=>x.id===data.id?data:x));toast("Book updated");}else{const col=BOOK_COLORS[(nBid-1)%BOOK_COLORS.length];setBooks(b=>[...b,{...data,id:nBid,color:col}]);setNBid(n=>n+1);toast("Book added to library");}setEditBook(null);};
+  const delBook=id=>{setBooks(b=>b.filter(x=>x.id!==id));setDetail(null);setEditBook(null);toast("Book removed");};
+  return (
+    <div style={C.screen}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"22px 22px 18px"}}>
+        <div><div style={{fontFamily:"var(--fd)",fontSize:30,fontWeight:800,color:"var(--t6)",letterSpacing:".03em"}}>LIBRARY</div><Lbl style={{marginTop:4,fontSize:7}}>Knowledge Arsenal</Lbl></div>
+        <button style={C.btnAcc} onClick={()=>setSearchOpen(true)}>+ ADD BOOK</button>
+      </div>
+      <div style={{padding:"0 22px 14px",display:"flex",gap:6,overflowX:"auto"}}>
+        {[["all","All"],["reading","Reading"],["done","Done"],["want","Want"]].map(([f,l])=>(
+          <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 16px",borderRadius:60,border:`1px solid ${filter===f?"rgba(124,110,248,.35)":"rgba(255,255,255,.07)"}`,background:filter===f?"linear-gradient(135deg,rgba(124,110,248,.2),rgba(124,110,248,.1))":"rgba(255,255,255,.03)",fontFamily:"var(--fm)",fontSize:8.5,letterSpacing:".12em",textTransform:"uppercase",color:filter===f?"var(--p)":"rgba(150,145,190,.6)",cursor:"pointer",whiteSpace:"nowrap",boxShadow:filter===f?"0 0 20px rgba(124,110,248,.15)":"none",transition:"all .22s ease"}}>{l}</button>
+        ))}
+      </div>
+      {filtered.length===0?<div style={{padding:"60px 22px",textAlign:"center"}}><div style={{fontSize:48,marginBottom:16,opacity:.4}}>📚</div><div style={{fontFamily:"var(--fd)",fontSize:20,color:"var(--t3)",letterSpacing:".06em",marginBottom:8}}>No books yet</div><div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".12em"}}>Tap + ADD BOOK to begin</div></div>:
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 22px"}}>
+          {filtered.map((b,i)=>{
+            const col=b.color||BOOK_COLORS[(b.id-1)%BOOK_COLORS.length];
+            const chC=(b.chapters||[]).filter(c=>c.title||c.summary).length,tipC=(b.tips||[]).filter(t=>t).length;
+            return(<div key={b.id} onClick={()=>setDetail(b.id)} style={{background:"linear-gradient(160deg,rgba(255,255,255,.065) 0%,rgba(255,255,255,.03) 100%)",border:"1px solid rgba(255,255,255,.07)",borderRadius:20,overflow:"hidden",cursor:"pointer",position:"relative",animationDelay:`${i*.05}s`,boxShadow:"0 4px 24px rgba(0,0,0,.5),0 1px 0 rgba(255,255,255,.06) inset"}} className="au card-hover">
+              <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(to right,${col},${col}66,transparent)`,zIndex:2}}/>
+              <div style={{width:"100%",aspectRatio:"2/3",background:`linear-gradient(160deg,${col}20,${col}08)`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
+                <BookCover book={{...b,title:b.name}} size={110}/>
+                <div style={{position:"absolute",bottom:0,left:0,right:0,height:"45%",background:"linear-gradient(to top,rgba(8,8,15,.95) 0%,transparent 100%)",zIndex:1}}/>
+              </div>
+              <div style={{padding:"10px 12px 14px"}}>
+                <div style={{fontSize:12,fontWeight:700,color:"var(--t5)",lineHeight:1.3,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{b.name}</div>
+                {b.author&&<div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".06em",marginBottom:7,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.author}</div>}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <Tag cls={stc(b.status)}>{stl(b.status)}</Tag>
+                  {tipC>0&&<span style={{fontFamily:"var(--fm)",fontSize:7.5,color:"var(--gold)",letterSpacing:".06em"}}>★ {tipC}</span>}
+                </div>
+              </div>
+            </div>);})}
+        </div>}
+      <div style={{height:16}}/>
+      <button onClick={()=>setSearchOpen(true)} style={{margin:"0 22px",width:"calc(100% - 44px)",padding:14,background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        <span style={{fontSize:16,lineHeight:1}}>+</span> Add New Book
+      </button>
+      {searchOpen&&<BookSearchSheet onClose={()=>setSearchOpen(false)} onBooked={data=>{setSearchOpen(false);setEditBook({...data,id:null});}} toast={toast}/>}
+      {editBook!==null&&<BookEditSheet book={editBook} onClose={()=>setEditBook(null)} onSave={saveBook} onDelete={delBook}/>}
+      {detail&&<BookDetailSheet book={books.find(b=>b.id===detail)} onClose={()=>setDetail(null)} onEdit={b=>{setDetail(null);setEditBook(b);}}/>}
+    </div>
+  );
+}
+
+/* ── BOOK SEARCH SHEET ───────────────────────────────── */
+function BookSearchSheet({onClose,onBooked,toast}) {
+  const [q,setQ]=useState("");
+  const [sugg,setSugg]=useState([]);
+  const [state,setState]=useState("idle"); // idle | searching | done | error
+  const [sel,setSel]=useState(null);
+  const [gen,setGen]=useState(false);
+  const [steps,setSteps]=useState([]);
+  const [err,setErr]=useState("");
+  const [pending,setPending]=useState(null);
+  const timer=useRef(null);
+  const inp=useRef(null);
+
+  const onInput=v=>{
+    setQ(v);setSel(null);clearTimeout(timer.current);
+    if(v.trim().length<2){setSugg([]);setState("idle");return;}
+    setState("searching");setSugg([]);
+    timer.current=setTimeout(async()=>{
+      try{const r=await searchGoogleBooks(v.trim());setSugg(r);setState(r.length?"done":"error");}
+      catch{setState("error");setSugg([]);}
+    },400);
+  };
+
+  const pick=book=>{setSel(book);setQ(book.title);setSugg([]);setState("idle");};
+
+  const generate=async(title,author)=>{
+    if(!title.trim()){toast("Enter a book title first");return;}
+    setErr("");setSteps([]);setGen(true);
+    const lbls=["Identifying book","Writing overview","Extracting insights","Mapping chapters"];
+    const cols=["var(--p)","var(--em)","var(--gold)","var(--sk)"];
+    let si=0;const t=setInterval(()=>{if(si>=lbls.length){clearInterval(t);return;}setSteps(p=>[...p,{text:lbls[si],col:cols[si]}]);si++;},900);
+    try{
+      const res=await generateBookAI(title.trim(),author||"");
+      clearInterval(t);
+      onBooked({name:title.trim(),author:author||"",summary:res.summary||"",tips:(res.tips||[]).filter(x=>x.trim()),chapters:(res.chapters||[]).filter(c=>c.title||c.summary),status:"reading",isbn:sel?.isbn||"",thumbnail:sel?.thumbnail||"",color:sel?.color||""});
+      toast("✨ AI summary ready — review & save");
+    }catch(e){clearInterval(t);setErr(e.message||"Generation failed");setPending({title,author});setGen(false);}
+  };
+
+  const go=()=>sel?generate(sel.title,sel.author):generate(q,"");
+  const showDrop=state==="searching"||(state==="done"&&sugg.length>0)||state==="error";
+
+  return (<Sheet open onClose={onClose}>
+    <ShDrag/><ShHdr title="ADD BOOK" sub="SEARCH BOOKS" onClose={onClose}/>
+    <div style={C.shBody}>
+      {!gen?<>
+        {/* Input */}
+        <label style={C.flabel}>Search for a book</label>
+        <div style={{position:"relative",zIndex:10}}>
+          <div style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,pointerEvents:"none",zIndex:2}}>
+            {state==="searching"?<span style={{display:"inline-block",animation:"spin .6s linear infinite",color:"var(--p)",fontSize:14}}>⟳</span>:"🔍"}
+          </div>
+          <input ref={inp} style={{...C.finput,paddingLeft:46,marginBottom:0,borderColor:showDrop?"rgba(124,110,248,.5)":"var(--e0)",borderBottomLeftRadius:showDrop?0:16,borderBottomRightRadius:showDrop?0:16}} value={q} onChange={e=>onInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")go();if(e.key==="Escape"){setSugg([]);setState("idle");}}} placeholder="Title, author, or genre…" autoFocus/>
+
+          {/* Dropdown */}
+          {showDrop&&(
+            <div style={{position:"absolute",top:"100%",left:0,right:0,background:"rgba(11,11,20,.98)",border:"1px solid rgba(124,110,248,.4)",borderTop:"none",borderRadius:"0 0 20px 20px",boxShadow:"0 20px 60px rgba(0,0,0,.8)",overflow:"hidden",maxHeight:380,overflowY:"auto"}}>
+              {/* Skeleton */}
+              {state==="searching"&&[0,1,2].map(i=>(
+                <div key={i} style={{display:"flex",gap:12,padding:"12px 16px",borderBottom:"1px solid var(--e0)",opacity:1-i*.25}}>
+                  <div style={{width:38,height:54,borderRadius:5,flexShrink:0,background:"linear-gradient(90deg,var(--g1) 25%,var(--g2) 50%,var(--g1) 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease infinite",animationDelay:`${i*.15}s`}}/>
+                  <div style={{flex:1,display:"flex",flexDirection:"column",gap:7,paddingTop:4}}>
+                    <div style={{height:11,borderRadius:4,width:"70%",background:"linear-gradient(90deg,var(--g1) 25%,var(--g2) 50%,var(--g1) 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease infinite",animationDelay:`${i*.1}s`}}/>
+                    <div style={{height:8,borderRadius:4,width:"45%",background:"linear-gradient(90deg,var(--g1) 25%,var(--g2) 50%,var(--g1) 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease infinite"}}/>
+                    <div style={{height:8,borderRadius:4,width:"85%",background:"linear-gradient(90deg,var(--g1) 25%,var(--g2) 50%,var(--g1) 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease infinite"}}/>
+                  </div>
+                </div>
+              ))}
+              {/* Results */}
+              {sugg.map((b,i)=>(
+                <div key={i} onClick={()=>pick(b)} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"12px 16px",cursor:"pointer",borderBottom:i<sugg.length-1?"1px solid var(--e0)":"none",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(124,110,248,.08)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  <BookCover book={b} size={38}/>
+                  <div style={{flex:1,minWidth:0,paddingTop:2}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"var(--t5)",marginBottom:3,lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.title}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+                      <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t3)",letterSpacing:".04em"}}>{b.author}</span>
+                      {b.year&&<span style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)"}}>· {b.year}</span>}
+                      {b.genre&&<span style={{fontFamily:"var(--fm)",fontSize:6.5,color:genreCss(b.genre),background:`${genreCss(b.genre)}1a`,padding:"1px 6px",borderRadius:20,border:`1px solid ${genreCss(b.genre)}30`}}>{b.genre}</span>}
+                    </div>
+                    {b.desc&&<div style={{fontSize:11,color:"var(--t2)",lineHeight:1.5,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{b.desc}</div>}
+                  </div>
+                  <div style={{color:"var(--p)",fontSize:15,opacity:.5,marginTop:6,flexShrink:0}}>›</div>
+                </div>
+              ))}
+              {state==="error"&&<div style={{padding:"14px 18px",fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".1em",textAlign:"center"}}>No matches — try a different title</div>}
+              {sugg.length>0&&<div style={{padding:"9px 18px",fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".12em",textAlign:"center",background:"rgba(124,110,248,.04)",borderTop:"1px solid var(--e0)"}}>TAP A BOOK → AI GENERATES FULL SUMMARY &amp; TIPS</div>}
+            </div>
+          )}
+        </div>
+
+        {/* Selected preview */}
+        {sel&&(
+          <div style={{display:"flex",alignItems:"center",gap:13,padding:"14px 16px",background:"rgba(124,110,248,.06)",border:"1px solid rgba(124,110,248,.25)",borderRadius:16,marginTop:14,animation:"fadeUp .3s ease"}}>
+            <BookCover book={sel} size={46}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:700,color:"var(--t5)",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sel.title}</div>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t3)",marginBottom:4}}>{sel.author}{sel.year?` · ${sel.year}`:""}</div>
+              {sel.genre&&<span style={{fontFamily:"var(--fm)",fontSize:7,color:genreCss(sel.genre),background:`${genreCss(sel.genre)}1a`,padding:"2px 8px",borderRadius:20,border:`1px solid ${genreCss(sel.genre)}30`}}>{sel.genre}</span>}
+            </div>
+            <button onClick={()=>{setSel(null);setQ("");setTimeout(()=>inp.current?.focus(),80);}} style={{color:"var(--t2)",fontSize:20,background:"none",border:"none",cursor:"pointer",lineHeight:1,flexShrink:0}}>×</button>
+          </div>
+        )}
+
+        {!sel&&state==="idle"&&<div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".1em",marginTop:12,marginBottom:4,lineHeight:1.6}}>Describe it, type a theme, author, or partial title — AI figures out the book</div>}
+
+        {/* Generate button */}
+        <button onClick={go} style={{...C.btnPri,marginTop:sel?16:12,marginBottom:14,fontSize:14,letterSpacing:".1em",opacity:q.trim()?1:.4,cursor:q.trim()?"pointer":"default"}}>
+          <span style={{fontSize:15}}>✦</span>
+          {sel?`GENERATE — "${sel.title.slice(0,26)}${sel.title.length>26?"…":""}"` : "GENERATE WITH AI"}
+        </button>
+        <div style={{borderTop:"1px solid var(--e0)",paddingTop:14}}>
+          <button style={{...C.btnGhost,width:"100%",display:"flex",justifyContent:"center"}} onClick={()=>{onClose();onBooked({name:q||"",author:"",summary:"",tips:[],chapters:[],status:"reading"});}}>+ ADD MANUALLY</button>
+        </div>
+
+      </>:<>
+        {/* Generating */}
+        <div style={{padding:"36px 0",textAlign:"center"}}>
+          {sel&&!err&&<div style={{display:"flex",justifyContent:"center",marginBottom:20}}><BookCover book={sel} size={64}/></div>}
+          {!sel&&!err&&<div style={{width:44,height:44,margin:"0 auto 20px",borderRadius:"50%",border:"2px solid var(--e1)",borderTopColor:"var(--p)",animation:"spin .9s linear infinite"}}/>}
+          {err&&<div style={{fontSize:36,marginBottom:16}}>⚠️</div>}
+          <div style={{fontFamily:"var(--fd)",fontSize:17,letterSpacing:".06em",marginBottom:6,color:err?"var(--ro)":"var(--t5)"}}>
+            {err?"Generation Failed":(sel?.title||q||"GENERATING…").slice(0,32)}
+          </div>
+          {!err&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t2)",letterSpacing:".1em"}}>Analyzing with AI…</div>}
+          {err&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--ro)",letterSpacing:".08em",margin:"8px auto 20px",lineHeight:1.5,maxWidth:280}}>{err}</div>}
+          <div style={{display:"flex",flexDirection:"column",gap:8,textAlign:"left",maxWidth:260,margin:"20px auto 0"}}>
+            {steps.map((st,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"5px 0",animation:"stepIn .3s ease both",animationDelay:`${i*.08}s`}}>
+                <div style={{width:7,height:7,borderRadius:"50%",background:st.col,flexShrink:0}}/>
+                <span style={{fontFamily:"var(--fm)",fontSize:9,color:st.col,letterSpacing:".08em"}}>{st.text}</span>
+                <span style={{marginLeft:"auto",fontSize:10,color:st.col}}>✓</span>
+              </div>
+            ))}
+          </div>
+          {err&&pending&&<div style={{display:"flex",gap:8,marginTop:20}}>
+            <button onClick={()=>{setErr("");setSteps([]);setGen(true);generate(pending.title,pending.author);}} style={{flex:1,padding:11,background:"var(--p2)",border:"1px solid rgba(124,110,248,.3)",borderRadius:12,fontFamily:"var(--fm)",fontSize:9,color:"var(--p)",letterSpacing:".1em",cursor:"pointer"}}>↻ RETRY</button>
+            <button onClick={()=>{onClose();onBooked({name:pending?.title||"",author:pending?.author||"",summary:"",tips:[],chapters:[],status:"reading"});}} style={{flex:1,padding:11,background:"var(--g1)",border:"1px solid var(--e1)",borderRadius:12,fontFamily:"var(--fm)",fontSize:9,color:"var(--t3)",letterSpacing:".1em",cursor:"pointer"}}>MANUAL →</button>
+          </div>}
+        </div>
+      </>}
+    </div>
+  </Sheet>);
+}
+
+/* ── BOOK EDIT SHEET ─────────────────────────────────── */
+function BookEditSheet({book,onClose,onSave,onDelete}) {
+  const isNew=!book.id;
+  const [name,setName]=useState(book.name||"");
+  const [author,setAuthor]=useState(book.author||"");
+  const [status,setStatus]=useState(book.status||"reading");
+  const [summary,setSummary]=useState(book.summary||"");
+  const [tips,setTips]=useState(book.tips?.length?[...book.tips]:[""] );
+  const [chs,setChs]=useState(book.chapters?.length?book.chapters.map(c=>({...c})):[{title:"",summary:""}]);
+  const save=()=>{if(!name.trim())return;onSave({...book,name:name.trim(),author:author.trim(),status,summary:summary.trim(),tips:tips.filter(t=>t.trim()),chapters:chs.filter(c=>c.title||c.summary)});};
+  return (<Sheet open onClose={onClose} sx={{maxHeight:"96dvh"}}>
+    <ShDrag/><ShHdr title={isNew?"NEW BOOK":"EDIT BOOK"} sub={isNew?"AI Generated — review & save":book.name} subColor="var(--em)" onClose={onClose}/>
+    <div style={C.shBody}>
+      <label style={C.flabel}>Book Title</label>
+      <input style={C.finput} value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Atomic Habits" maxLength={80}/>
+      <label style={C.flabel}>Author</label>
+      <input style={C.finput} value={author} onChange={e=>setAuthor(e.target.value)} placeholder="e.g. James Clear" maxLength={60}/>
+      <label style={C.flabel}>Status</label>
+      <div style={{display:"flex",gap:7,marginBottom:18}}>
+        {[["reading","Reading"],["done","Done"],["want","Want to Read"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setStatus(v)} style={{padding:"6px 16px",borderRadius:60,border:"1px solid var(--e0)",background:status===v?"var(--p2)":"var(--g1)",fontFamily:"var(--fm)",fontSize:9,color:status===v?"var(--p)":"var(--t2)",cursor:"pointer",boxShadow:status===v?"0 0 16px var(--p2)":"none"}}>{l}</button>
+        ))}
+      </div>
+      <label style={C.flabel}>Summary</label>
+      <textarea style={C.fta} rows={3} value={summary} onChange={e=>setSummary(e.target.value)} placeholder="What is this book about?"/>
+      <label style={C.flabel}>Golden Tips</label>
+      {tips.map((tip,i)=>(
+        <div key={i} style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:16,padding:14,marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+            <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".16em",textTransform:"uppercase"}}>Tip {i+1}</span>
+            <button onClick={()=>setTips(t=>t.filter((_,j)=>j!==i).length?t.filter((_,j)=>j!==i):[""])} style={{color:"var(--ro)",fontSize:18,cursor:"pointer",background:"none",border:"none"}}>×</button>
+          </div>
+          <textarea style={{...C.fta,marginBottom:0,minHeight:60}} rows={2} value={tip} onChange={e=>setTips(t=>t.map((x,j)=>j===i?e.target.value:x))} placeholder="Enter golden tip…"/>
+        </div>
+      ))}
+      <button onClick={()=>setTips(t=>[...t,""])} style={{width:"100%",padding:10,background:"none",border:"1px dashed var(--e1)",borderRadius:16,fontFamily:"var(--fm)",fontSize:8,letterSpacing:".14em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer",marginBottom:18}}>+ Add Golden Tip</button>
+      <label style={C.flabel}>Chapters</label>
+      {chs.map((ch,i)=>(
+        <div key={i} style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:16,padding:14,marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+            <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".16em",textTransform:"uppercase"}}>Chapter {i+1}</span>
+            <button onClick={()=>setChs(c=>c.filter((_,j)=>j!==i).length?c.filter((_,j)=>j!==i):[{title:"",summary:""}])} style={{color:"var(--ro)",fontSize:18,cursor:"pointer",background:"none",border:"none"}}>×</button>
+          </div>
+          <input style={{...C.finput,marginBottom:10}} value={ch.title||""} onChange={e=>setChs(c=>c.map((x,j)=>j===i?{...x,title:e.target.value}:x))} placeholder="Chapter title…"/>
+          <textarea style={{...C.fta,marginBottom:0,minHeight:70}} rows={3} value={ch.summary||""} onChange={e=>setChs(c=>c.map((x,j)=>j===i?{...x,summary:e.target.value}:x))} placeholder="Chapter summary…"/>
+        </div>
+      ))}
+      <button onClick={()=>setChs(c=>[...c,{title:"",summary:""}])} style={{width:"100%",padding:10,background:"none",border:"1px dashed var(--e1)",borderRadius:16,fontFamily:"var(--fm)",fontSize:8,letterSpacing:".14em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer",marginBottom:18}}>+ Add Chapter</button>
+      <div style={{display:"flex",gap:10}}>
+        <button style={{...C.btnPri,flex:1}} onClick={save}>SAVE BOOK</button>
+        {!isNew&&<button style={C.btnDng} onClick={()=>onDelete(book.id)}>DELETE</button>}
+      </div>
+    </div>
+  </Sheet>);
+}
+
+/* ── BOOK DETAIL SHEET ───────────────────────────────── */
+function BookDetailSheet({book,onClose,onEdit}) {
+  const [tab,setTab]=useState("overview");
+  if(!book)return null;
+  const col=book.color||BOOK_COLORS[(book.id-1)%BOOK_COLORS.length];
+  const tips=(book.tips||[]).filter(t=>t),chs=(book.chapters||[]).filter(c=>c.title||c.summary);
+  const stl=s=>s==="reading"?"Reading":s==="done"?"Done":"Want to Read",stc=s=>s==="reading"?"sk":s==="done"?"em":"p";
+  return (<Sheet open onClose={onClose} sx={{maxHeight:"96dvh",borderTopColor:col,boxShadow:`0 -8px 70px rgba(0,0,0,.75),0 0 0 1px ${col}44`}}>
+    <ShDrag/>
+    <div style={{padding:"20px 22px 16px",display:"flex",gap:16,alignItems:"flex-end",borderBottom:"1px solid rgba(255,255,255,.06)",background:`linear-gradient(160deg,${col}0d 0%,transparent 50%)`,position:"relative"}}>
+      <div style={{position:"absolute",left:14,top:14,width:80,height:112,background:col,opacity:.06,filter:"blur(24px)",borderRadius:8,pointerEvents:"none"}}/>
+      <div style={{position:"relative",zIndex:1}}><BookCover book={{...book,title:book.name}} size={72}/></div>
+      <div style={{flex:1,minWidth:0,position:"relative",zIndex:1}}>
+        <div style={{fontFamily:"var(--fd)",fontSize:20,fontWeight:800,color:"var(--t6)",letterSpacing:".02em",lineHeight:1.1,marginBottom:5}}>{book.name}</div>
+        {book.author&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t2)",letterSpacing:".1em",marginBottom:8}}>{book.author}</div>}
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <Tag cls={stc(book.status)}>{stl(book.status)}</Tag>
+          <button onClick={()=>onEdit(book)} style={{background:"none",border:"1px solid var(--e0)",borderRadius:20,cursor:"pointer",fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",padding:"3px 8px",letterSpacing:".1em",textTransform:"uppercase"}}>EDIT</button>
+        </div>
+      </div>
+    </div>
+    <div style={{display:"flex",gap:2,padding:"0 22px"}}>
+      {[["overview","Overview"],["tips","Golden Tips"],["chapters","Chapters"]].map(([t,l])=>(
+        <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"12px 8px",fontFamily:"var(--fm)",fontSize:8,letterSpacing:".14em",textTransform:"uppercase",color:tab===t?"var(--t5)":"var(--t2)",cursor:"pointer",background:"none",border:"none",position:"relative",transition:"color .22s ease"}}>
+          {l}
+          {tab===t&&<div style={{position:"absolute",bottom:0,left:"20%",right:"20%",height:2,borderRadius:2,background:"linear-gradient(to right,var(--p),#a78bfa)",animation:"tabSlide .22s cubic-bezier(.22,1,.36,1)"}}/>}
+        </button>
+      ))}
+    </div>
+    {tab==="overview"&&<div style={{padding:"18px 22px"}}>
+      <Lbl style={{marginBottom:12}}>Summary</Lbl>
+      <div style={{fontSize:14,color:book.summary?"var(--t4)":"var(--t1)",lineHeight:1.75}}>{book.summary||"No summary yet."}</div>
+      <div style={{height:20}}/>
+      <Lbl style={{marginBottom:12}}>Quick Stats</Lbl>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        {[{l:"Tips",v:tips.length,c:"var(--gold)"},{l:"Chapters",v:chs.length,c:"var(--p)"}].map(({l,v,c})=>(
+          <div key={l} style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,padding:"12px 14px 10px",position:"relative",overflow:"hidden",color:c}}>
+            <div style={{position:"absolute",top:0,left:12,right:12,height:1.5,background:"currentColor",opacity:.4,borderRadius:"0 0 4px 4px"}}/>
+            <div style={{fontFamily:"var(--fd)",fontSize:24,fontWeight:800,lineHeight:1}}>{v||"—"}</div>
+            <div style={{fontFamily:"var(--fm)",fontSize:7,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",marginTop:8}}>{l}</div>
+          </div>
+        ))}
+      </div>
+    </div>}
+    {tab==="tips"&&<div style={{padding:"18px 22px"}}>
+      {tips.length===0?<div style={{padding:"32px 0",textAlign:"center",fontFamily:"var(--fm)",fontSize:10,color:"var(--t1)",letterSpacing:".12em"}}>No golden tips yet</div>:tips.map((tip,i)=>(
+        <div key={i} style={{background:"linear-gradient(145deg,rgba(228,184,74,.06),rgba(228,184,74,.02))",border:"1px solid rgba(228,184,74,.15)",borderRadius:16,padding:"14px 16px",marginBottom:8,display:"flex",gap:12,alignItems:"flex-start",boxShadow:"0 2px 12px rgba(0,0,0,.3)"}}>
+          <div style={{fontFamily:"var(--fd)",fontSize:18,fontWeight:800,color:"var(--gold)",lineHeight:1,flexShrink:0,minWidth:24,textShadow:"0 0 20px rgba(228,184,74,.4)"}}>{i+1}</div>
+          <div style={{fontSize:13,color:"var(--t4)",lineHeight:1.7}}>{tip}</div>
+        </div>
+      ))}
+    </div>}
+    {tab==="chapters"&&<div style={{padding:"18px 22px"}}>
+      {chs.length===0?<div style={{padding:"32px 0",textAlign:"center",fontFamily:"var(--fm)",fontSize:10,color:"var(--t1)",letterSpacing:".12em"}}>No chapters yet</div>:chs.map((ch,i)=>(
+        <div key={i} style={{padding:"14px 0",borderBottom:"1px solid var(--e0)"}}>
+          <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".14em",textTransform:"uppercase",marginBottom:4}}>Chapter {i+1}</div>
+          <div style={{fontSize:14,fontWeight:600,color:"var(--t5)",marginBottom:4}}>{ch.title||"Untitled"}</div>
+          {ch.summary&&<div style={{fontSize:12,color:"var(--t3)",lineHeight:1.6}}>{ch.summary}</div>}
+        </div>
+      ))}
+    </div>}
+  </Sheet>);
+}
+
+/* ════════════════════════════════════════════════════
+   SYNC SHEET
+════════════════════════════════════════════════════ */
+function SyncSheet({habits,open,onClose,toast}) {
+  const [dur,setDur]=useState(60);
+  const [dates,setDates]=useState({});
+  const [times,setTimes]=useState({});
+  const [sent,setSent]=useState({});
+  const nn=habits.filter(h=>h.isNN),td=today();
+  const hasGoogleCreds = ()=>!!(localStorage.getItem("vg_google_api_key") && localStorage.getItem("vg_google_client_id"));
+  const syncOne=async id=>{const h=habits.find(x=>x.id===id);if(!h)return;if(hasGoogleCreds()){try{await createGoogleCalendarEvent(h.name,dates[id]||td,times[id]||h.time,dur);setSent(s=>({...s,[id]:true}));toast(`✓ "${h.name}" → Google Calendar`);return;}catch(e){toast("Google Calendar error — downloading .ics");console.error(e);}}openCalendarEvent(h.name,dates[id]||td,times[id]||h.time,dur);setSent(s=>({...s,[id]:true}));toast(`${pfI()} "${h.name}" → ${pfL()}`);};
+  const syncAll=async()=>{for(const h of nn){await syncOne(h.id);await new Promise(r=>setTimeout(r,700));}toast(`✓ ${nn.length} events synced`);setTimeout(onClose,900);};
+  return (<Sheet open={open} onClose={onClose}>
+    <ShDrag/><ShHdr title="SYNC TO CALENDAR" sub={pfL()} onClose={onClose}/>
+    <div style={C.shBody}>
+      <label style={C.flabel}>Block Duration</label>
+      <div style={{display:"flex",gap:7,marginBottom:6}}>
+        {[30,60,90,120].map(d=><button key={d} onClick={()=>setDur(d)} style={{padding:"6px 16px",borderRadius:60,border:"1px solid var(--e0)",background:dur===d?"var(--p2)":"var(--g1)",fontFamily:"var(--fm)",fontSize:9,color:dur===d?"var(--p)":"var(--t2)",cursor:"pointer",boxShadow:dur===d?"0 0 16px var(--p2)":"none"}}>{d}m</button>)}
+      </div>
+      <div style={{marginTop:20}}>
+        {nn.map(h=>(
+          <div key={h.id} style={{padding:"18px 0",borderBottom:"1px solid var(--e0)",display:"grid",gridTemplateColumns:"1fr auto",alignItems:"start",gap:14}}>
+            <div>
+              <div style={{fontSize:15,fontWeight:600,color:"var(--t5)",marginBottom:11,display:"flex",alignItems:"center",gap:9}}>{sent[h.id]&&<span style={{color:"var(--em)"}}>✓</span>}{h.name}<Tag cls="em">NN</Tag></div>
+              <div style={{display:"flex",flexDirection:"column",gap:9}}>
+                <div style={{display:"flex",alignItems:"center",gap:9}}>
+                  <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".18em",textTransform:"uppercase",minWidth:34}}>DATE</span>
+                  <input type="date" value={dates[h.id]||td} onChange={e=>setDates(d=>({...d,[h.id]:e.target.value}))} style={{padding:"8px 12px",background:"rgba(124,110,248,.08)",border:"1px solid rgba(124,110,248,.18)",borderRadius:10,color:"var(--p)",fontFamily:"var(--fm)",fontSize:11,minWidth:128}}/>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:9}}>
+                  <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".18em",textTransform:"uppercase",minWidth:34}}>TIME</span>
+                  <input type="time" value={times[h.id]||h.time} onChange={e=>setTimes(t=>({...t,[h.id]:e.target.value}))} style={{padding:"8px 12px",background:"rgba(124,110,248,.08)",border:"1px solid rgba(124,110,248,.18)",borderRadius:10,color:"var(--p)",fontFamily:"var(--fm)",fontSize:11,minWidth:78}}/>
+                  <span style={{fontFamily:"var(--fm)",fontSize:10,color:"var(--t1)"}}>→ {endT(times[h.id]||h.time,dur)}</span>
+                </div>
+              </div>
+            </div>
+            <div style={{paddingTop:4}}>
+              <button onClick={()=>syncOne(h.id)} style={{padding:"10px 16px",background:sent[h.id]?"var(--em1)":"var(--g1)",border:`1px solid ${sent[h.id]?"rgba(45,212,160,.3)":"var(--e0)"}`,borderRadius:10,color:sent[h.id]?"var(--em)":"var(--t2)",fontFamily:"var(--fm)",fontSize:8,letterSpacing:".12em",textTransform:"uppercase",cursor:"pointer",whiteSpace:"nowrap"}}>{sent[h.id]?"✓ SENT":"SYNC →"}</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{marginTop:24}}>
+        <button style={C.btnPri} onClick={syncAll}>SYNC ALL EVENTS</button>
+        <p style={{textAlign:"center",fontFamily:"var(--fm)",fontSize:8,color:"var(--t0)",letterSpacing:".1em",textTransform:"uppercase",marginTop:12}}>Opens in your calendar app for confirmation</p>
+      </div>
+    </div>
+  </Sheet>);
+}
+
+/* ════════════════════════════════════════════════════
+   PROFILE SCREEN
+════════════════════════════════════════════════════ */
+function ProfileScreen({habits,onSync,googleApiKey,googleClientId,googleConfigStatus,setGoogleApiKey,setGoogleClientId,saveGoogleConfig,connectGoogle}) {
+  const done=habits.filter(h=>h.status==="complete").length,tot=habits.length,pct=tot?Math.round(done/tot*100):0;
+  const nn=habits.filter(h=>h.isNN);
+  const [w,setW]=useState(0);
+  useEffect(()=>{const t=setTimeout(()=>setW(pct),200);return()=>clearTimeout(t);},[pct]);
+  return (
+    <div style={C.screen}>
+      <div style={{padding:"22px 22px 18px"}}><div style={{fontFamily:"var(--fd)",fontSize:30,fontWeight:800,color:"var(--t6)",letterSpacing:".03em"}}>PROFILE</div><Lbl style={{marginTop:4,fontSize:7}}>Systems &amp; Integration</Lbl></div>
+      <div style={{margin:"0 22px 18px"}}>
+        <Lbl style={{fontSize:7,marginBottom:12}}>Google Calendar Setup</Lbl>
+        <div style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,padding:18,marginBottom:18}}>
+          <div style={{display:"grid",gap:14}}>
+            <div>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase",marginBottom:6}}>API Key</div>
+              <input value={googleApiKey} onChange={e=>setGoogleApiKey(e.target.value)} placeholder="Paste your Google API key" style={C.finput}/>
+            </div>
+            <div>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase",marginBottom:6}}>OAuth Client ID</div>
+              <input value={googleClientId} onChange={e=>setGoogleClientId(e.target.value)} placeholder="Paste your OAuth 2.0 Client ID" style={C.finput}/>
+            </div>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+              <button style={C.btnPri} onClick={saveGoogleConfig}>Save settings</button>
+              {googleApiKey && googleClientId && <button style={{...C.btnPri,background:"rgba(45,212,160,.15)",border:"1px solid rgba(45,212,160,.3)",color:"var(--em)"}} onClick={connectGoogle}>Connect →</button>}
+            </div>
+            <div style={{fontSize:10,color:"var(--t2)",lineHeight:1.6}}>{googleConfigStatus}</div>
+            <div style={{fontSize:10,color:"var(--t3)",lineHeight:1.6,marginTop:10}}>
+              Steps: create a project in Google Cloud, enable the Calendar API, create an API key, create an OAuth 2.0 Client ID, and set the authorized origin to your app's address (for local use, serve from http://localhost). Use these values here to connect.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{margin:"0 22px 18px",padding:"22px 22px 20px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-90,right:-90,width:230,height:230,borderRadius:"50%",background:"radial-gradient(circle,rgba(124,110,248,.09),transparent 70%)",pointerEvents:"none"}}/>
+        <Lbl style={{fontSize:7,marginBottom:12}}>Today's Score</Lbl>
+        <div style={{display:"flex",alignItems:"baseline",gap:10}}>
+          <div style={{fontFamily:"var(--fd)",fontSize:72,fontWeight:800,lineHeight:1,background:"linear-gradient(135deg,var(--p),#a78bfa,#67e8f9)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>{pct}%</div>
+          <span style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".1em"}}>{done} / {tot} habits</span>
+        </div>
+        <div style={{height:4,background:"rgba(255,255,255,.05)",borderRadius:4,overflow:"hidden",marginTop:18}}><div style={{height:"100%",background:"linear-gradient(90deg,#6d5ff5,var(--p),#a78bfa)",borderRadius:4,width:`${w}%`,transition:"width 1.1s ease",boxShadow:"0 0 12px rgba(124,110,248,.4)"}}/></div>
+      </div>
+      <div style={{margin:"0 22px 18px"}}>
+        <Lbl style={{fontSize:7,marginBottom:12}}>Calendar Sync</Lbl>
+        <div style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,overflow:"hidden"}}>
+          <div style={{padding:"16px 18px",borderBottom:"1px solid var(--e0)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:22}}>{pfI()}</span><div><div style={{fontSize:14,fontWeight:600,color:"var(--t5)"}}>{pfL()}</div><div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".1em"}}>{nn.length} Non-Negotiables ready</div></div></div>
+            <Tag cls="p">READY</Tag>
+          </div>
+          {nn.map(h=><div key={h.id} style={{display:"flex",justifyContent:"space-between",padding:"11px 18px",borderBottom:"1px solid var(--e0)"}}><span style={{fontSize:13,color:"var(--t3)"}}>{h.name}</span><span style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)"}}>{h.time}</span></div>)}
+          <div style={{padding:"16px 18px"}}><button style={C.btnPri} onClick={onSync}>{pfI()} SYNC NON-NEGOTIABLES</button></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════
+   ROOT APP
+════════════════════════════════════════════════════ */
+function App() {
+  const [screen,setScreen] = useState("home");
+  const [habits,setHabits] = useState(()=>{try{const s=localStorage.getItem("vg_habits");return s?JSON.parse(s):INIT_HABITS;}catch{return INIT_HABITS;}});
+  const [goals,setGoals]   = useState(INIT_GOALS);
+  const [books,setBooks]   = useState([]);
+  const [nHid,setNHid]     = useState(7);
+  const [nGid,setNGid]     = useState(4);
+  const [nBid,setNBid]     = useState(1);
+  const [googleApiKey,setGoogleApiKey] = useState("");
+  const [googleClientId,setGoogleClientId] = useState("");
+  const [googleConfigStatus,setGoogleConfigStatus] = useState("Not configured");
+  const [syncOpen,setSyncOpen] = useState(false);
+  const [toastMsg,setToastMsg] = useState("");
+  const [clock,setClock]   = useState("");
+  const tRef = useRef(null);
+
+  const toast = msg => { setToastMsg(msg); clearTimeout(tRef.current); tRef.current=setTimeout(()=>setToastMsg(""),2800); };
+
+  // Persist habits to localStorage + habits.json for WhatsApp notifications
+  useEffect(()=>{
+    try{ localStorage.setItem("vg_habits", JSON.stringify(habits)); }catch{}
+    writeHabitsFile(habits);
+  },[habits]);
+
+  function openHabitsDB(){return new Promise((res,rej)=>{const r=indexedDB.open("vg_handles",1);r.onupgradeneeded=e=>e.target.result.createObjectStore("h");r.onsuccess=e=>res(e.target.result);r.onerror=rej;});}
+  async function writeHabitsFile(habits){
+    try{
+      const db=await openHabitsDB();
+      const handle=await new Promise((res,rej)=>{const tx=db.transaction("h","readonly");const g=tx.objectStore("h").get("habits");g.onsuccess=()=>res(g.result||null);g.onerror=rej;});
+      if(!handle)return;
+      const perm=await handle.queryPermission({mode:"readwrite"});
+      const granted=perm==="granted"?perm:await handle.requestPermission({mode:"readwrite"});
+      if(granted!=="granted")return;
+      const w=await handle.createWritable();
+      await w.write(JSON.stringify(habits,null,2));
+      await w.close();
+    }catch{}
+  }
+  async function setupHabitsExport(){
+    try{
+      const handle=await window.showSaveFilePicker({suggestedName:"habits.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
+      const db=await openHabitsDB();
+      await new Promise((res,rej)=>{const tx=db.transaction("h","readwrite");tx.objectStore("h").put(handle,"habits");tx.oncomplete=res;tx.onerror=rej;});
+      await writeHabitsFile(habits);
+      toast("✓ Habits will auto-sync to habits.json");
+    }catch(e){if(e.name!=="AbortError")toast("Could not set up file sync");}
+  }
+
+  const saveGoogleConfig = ()=>{
+    try{
+      localStorage.setItem("vg_google_api_key", googleApiKey);
+      localStorage.setItem("vg_google_client_id", googleClientId);
+      _gapiReady = false; _accessToken = null; // reset so next sync re-inits with new creds
+      setGoogleConfigStatus("Saved. Click Connect → to authorize Google Calendar.");
+      toast("Google Calendar settings saved");
+    }catch(e){
+      setGoogleConfigStatus("Unable to save settings locally.");
+      console.error(e);
+    }
+  };
+
+  const connectGoogle = async ()=>{
+    if(!googleApiKey || !googleClientId){ toast("Enter API key and Client ID first"); return; }
+    try{
+      setGoogleConfigStatus("Initializing…");
+      _gapiReady = false; _accessToken = null;
+      await initGoogleCalendar(googleApiKey, googleClientId);
+      await requestGoogleToken();
+      setGoogleConfigStatus("✓ Connected to Google Calendar");
+      toast("Google Calendar connected");
+    }catch(e){
+      setGoogleConfigStatus("Connection failed: " + e.message);
+      toast("Google Calendar connection failed");
+      console.error(e);
+    }
+  };
+
+  useEffect(()=>{
+    try{
+      const storedKey = localStorage.getItem("vg_google_api_key")||"";
+      const storedClient = localStorage.getItem("vg_google_client_id")||"";
+      setGoogleApiKey(storedKey);
+      setGoogleClientId(storedClient);
+      if(storedKey && storedClient) setGoogleConfigStatus("Saved locally. Add to Google Cloud and connect.");
+    }catch(e){
+      console.error(e);
+    }
+  },[]);
+
+  useEffect(()=>{
+    const tick=()=>{const n=new Date();setClock(`${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`);};
+    tick();const id=setInterval(tick,15000);return()=>clearInterval(id);
+  },[]);
+
+  const onCycle = id => {
+    const cyc={pending:"complete",complete:"failed",failed:"pending"};
+    setHabits(h=>h.map(x=>{if(x.id!==id)return x;const nx={...x,status:cyc[x.status]};if(nx.status==="complete")toast(`✓ ${x.name}`);return nx;}));
+  };
+
+  const NAV=[{id:"home",ni:"⬡",nl:"Home"},{id:"habits",ni:"◈",nl:"Habits"},{id:"goals",ni:"⬢",nl:"Goals"},{id:"library",ni:"📖",nl:"Library"},{id:"profile",ni:"◉",nl:"Profile"}];
+
+  return (
+    <div style={C.app}>
+      {/* Status bar */}
+      <div style={C.sb}>
+        <span style={{fontFamily:"var(--fm)",fontSize:12,color:"var(--t2)",letterSpacing:".04em"}}>{clock}</span>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:7,height:7,borderRadius:"50%",background:"var(--em)",boxShadow:"0 0 10px var(--em),0 0 22px rgba(45,212,160,.3)",animation:"breathe 3.2s ease-in-out infinite"}}/>
+          <span style={{fontFamily:"var(--fm)",fontSize:10,color:"var(--p)",letterSpacing:".22em",opacity:.65}}>VANGUARD</span>
+        </div>
+      </div>
+
+      {/* Screens */}
+      {screen==="home"    && <HomeScreen    habits={habits} goals={goals} onCycle={onCycle} onSync={()=>setSyncOpen(true)}/>}
+      {screen==="habits"  && <HabitsScreen  habits={habits} setHabits={setHabits} nHid={nHid} setNHid={setNHid} onSync={()=>setSyncOpen(true)} onSetupExport={setupHabitsExport}/>}
+      {screen==="goals"   && <GoalsScreen   goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} showToast={toast}/>}
+      {screen==="library" && <LibraryScreen books={books} setBooks={setBooks} nBid={nBid} setNBid={setNBid} toast={toast}/>}
+      {screen==="profile" && <ProfileScreen habits={habits} onSync={()=>setSyncOpen(true)} googleApiKey={googleApiKey} googleClientId={googleClientId} googleConfigStatus={googleConfigStatus} setGoogleApiKey={setGoogleApiKey} setGoogleClientId={setGoogleClientId} saveGoogleConfig={saveGoogleConfig} connectGoogle={connectGoogle}/>}
+
+      {/* Nav */}
+      <nav style={C.nav}>
+        {NAV.map(({id,ni,nl})=>(
+          <button key={id} onClick={()=>setScreen(id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 16px",borderRadius:52,border:"none",cursor:"pointer",transition:"all .28s cubic-bezier(.22,1,.36,1)",...(screen===id?{background:"linear-gradient(145deg,rgba(124,110,248,.2),rgba(124,110,248,.1))",color:"var(--p)",boxShadow:"0 0 0 1px rgba(124,110,248,.28),0 2px 16px rgba(124,110,248,.18)",animation:"glowPulse 3s ease-in-out infinite"}:{background:"none",color:"rgba(120,115,160,.6)"})}}>
+            <span style={{fontSize:15,lineHeight:1,transform:screen===id?"scale(1.2)":"scale(1)",transition:"transform .3s cubic-bezier(.34,1.56,.64,1)",filter:screen===id?"drop-shadow(0 0 6px rgba(124,110,248,.5))":"none"}}>{ni}</span>
+            <span style={{fontFamily:"var(--fm)",fontSize:"6px",letterSpacing:".18em",textTransform:"uppercase",opacity:screen===id?1:.5}}>{nl}</span>
+          </button>
+        ))}
+      </nav>
+
+      <SyncSheet habits={habits} open={syncOpen} onClose={()=>setSyncOpen(false)} toast={toast}/>
+      <Toast msg={toastMsg}/>
+    </div>
+  );
+}
