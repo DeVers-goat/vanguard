@@ -39,7 +39,15 @@ groq_req = urllib.request.Request(
         'Content-Type': 'application/json',
     },
 )
-groq_res = json.loads(urllib.request.urlopen(groq_req).read())
+try:
+    groq_res = json.loads(urllib.request.urlopen(groq_req).read())
+except urllib.error.HTTPError as e:
+    err_body = e.read().decode('utf-8', errors='replace')
+    print(f"Groq API error: HTTP {e.code}")
+    print(f"Response body: {err_body}")
+    print(f"Key length: {len(groq_key) if groq_key else 0} (should be ~56)")
+    print(f"Key starts with: {groq_key[:8] if groq_key else 'EMPTY'}...")
+    raise
 review = groq_res['choices'][0]['message']['content'].strip()
 
 # Build WhatsApp message
