@@ -37,6 +37,7 @@ groq_req = urllib.request.Request(
     headers={
         'Authorization': f'Bearer {groq_key}',
         'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; habit-reviewer/1.0)',
     },
 )
 try:
