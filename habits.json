@@ -1,27 +1,406 @@
 [
-  {"id":1,  "name":"8000 steps",                   "time":"06:00","isNN":true, "isBad":false,"status":"pending","days":[0,1,2,3,4,5,6],"duration":0},
-  {"id":2,  "name":"Checking the stock market",    "time":"06:45","isNN":false,"isBad":false,"status":"pending","days":[1,4],          "duration":20},
-  {"id":3,  "name":"Morning supplements",          "time":"07:00","isNN":true, "isBad":false,"status":"pending","days":[0,1,2,3,4,5,6],"duration":0},
-  {"id":4,  "name":"Brushing teeth",               "time":"07:15","isNN":true, "isBad":false,"status":"pending","days":[0,1,2,3,4,5,6],"duration":0},
-  {"id":5,  "name":"Read a chapter in the book",   "time":"07:30","isNN":false,"isBad":false,"status":"pending","days":[1,3],          "duration":60},
-  {"id":6,  "name":"Physiotherapy",                "time":"08:00","isNN":false,"isBad":false,"status":"pending","days":[0,2,3,5],       "duration":25},
-  {"id":7,  "name":"Strength training",            "time":"09:00","isNN":false,"isBad":false,"status":"pending","days":[1,5,6],         "duration":90},
-  {"id":8,  "name":"Recovery run",                 "time":"09:00","isNN":false,"isBad":false,"status":"pending","days":[2,4],           "duration":30},
-  {"id":9,  "name":"Eating healthy",               "time":"12:00","isNN":false,"isBad":false,"status":"pending","days":[0,2,3,4],       "duration":0},
-  {"id":10, "name":"Working on code",              "time":"14:00","isNN":false,"isBad":false,"status":"pending","days":[2,4],           "duration":120},
-  {"id":11, "name":"Improving communication skill","time":"15:00","isNN":false,"isBad":false,"status":"pending","days":[2],             "duration":60},
-  {"id":12, "name":"Chess",                        "time":"16:00","isNN":true, "isBad":false,"status":"pending","days":[0,1,2,3,4,5,6],"duration":0},
-  {"id":13, "name":"Calling a friend/family",      "time":"18:00","isNN":false,"isBad":false,"status":"pending","days":[3],             "duration":20},
-  {"id":14, "name":"Cooking / Meal prep",          "time":"18:30","isNN":false,"isBad":false,"status":"pending","days":[6],             "duration":270},
-  {"id":15, "name":"Planning Meal prep",           "time":"19:00","isNN":false,"isBad":false,"status":"pending","days":[3],             "duration":60},
-  {"id":16, "name":"Organize Bed",                 "time":"20:00","isNN":true, "isBad":false,"status":"pending","days":[0,1,2,3,4,5,6],"duration":0},
-  {"id":17, "name":"Evening magnesium",            "time":"21:00","isNN":true, "isBad":false,"status":"pending","days":[0,1,2,3,4,5,6],"duration":0},
-  {"id":18, "name":"Grooming",                     "time":"21:15","isNN":false,"isBad":false,"status":"pending","days":[0,2],           "duration":15},
-  {"id":19, "name":"No Instagram before 12PM",     "time":"11:00","isNN":false,"isBad":false,"status":"pending","days":[1,4],           "duration":0},
-  {"id":20, "name":"Munching snacks",              "time":"16:00","isNN":false,"isBad":true, "status":"pending","days":[0,1,2,3,4,5,6],"duration":0},
-  {"id":21, "name":"Organize Shekem",              "time":"17:00","isNN":false,"isBad":false,"status":"pending","days":[0],             "duration":210},
-  {"id":22, "name":"Trip",                         "time":"10:00","isNN":false,"isBad":false,"status":"pending","days":[],             "duration":0},
-  {"id":23, "name":"Weighing myself",              "time":"07:00","isNN":false,"isBad":false,"status":"pending","days":[6],             "duration":0},
-  {"id":24, "name":"Weekly physique photo",        "time":"07:30","isNN":false,"isBad":false,"status":"pending","days":[6],             "duration":0},
-  {"id":25, "name":"Weekly journal",               "time":"21:00","isNN":false,"isBad":false,"status":"pending","days":[6],             "duration":60}
+  {
+    "id": 1,
+    "name": "8000 steps",
+    "time": "06:00",
+    "isNN": true,
+    "status": "pending",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 2,
+    "name": "Checking the stock market",
+    "time": "06:45",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      1,
+      4
+    ],
+    "completedDates": [],
+    "duration": 20,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 3,
+    "name": "Morning supplements",
+    "time": "07:00",
+    "isNN": true,
+    "status": "pending",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 4,
+    "name": "Brushing teeth",
+    "time": "07:15",
+    "isNN": true,
+    "status": "pending",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 5,
+    "name": "Read a chapter in the book",
+    "time": "07:30",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      1,
+      3
+    ],
+    "completedDates": [],
+    "duration": 60,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 6,
+    "name": "Physiotherapy",
+    "time": "13:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      0,
+      2,
+      3,
+      5
+    ],
+    "completedDates": [],
+    "duration": 25,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 7,
+    "name": "Strength training",
+    "time": "09:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      1,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 90,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 8,
+    "name": "Recovery run",
+    "time": "22:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      2,
+      4
+    ],
+    "completedDates": [],
+    "duration": 30,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 9,
+    "name": "Eating healthy",
+    "time": "12:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      0,
+      2,
+      3,
+      4
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 10,
+    "name": "Working on code",
+    "time": "15:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      2,
+      4
+    ],
+    "completedDates": [],
+    "duration": 120,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 11,
+    "name": "Improving communication skill",
+    "time": "17:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      2
+    ],
+    "completedDates": [],
+    "duration": 60,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 12,
+    "name": "Chess",
+    "time": "16:00",
+    "isNN": true,
+    "status": "pending",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 13,
+    "name": "Calling a friend/family",
+    "time": "18:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      3
+    ],
+    "completedDates": [],
+    "duration": 20,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 14,
+    "name": "Cooking / Meal prep",
+    "time": "18:30",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      6
+    ],
+    "completedDates": [],
+    "duration": 270,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 15,
+    "name": "Planning Meal prep",
+    "time": "19:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      3
+    ],
+    "completedDates": [],
+    "duration": 60,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 16,
+    "name": "Organize Bed",
+    "time": "20:00",
+    "isNN": true,
+    "status": "pending",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 17,
+    "name": "Evening magnesium",
+    "time": "21:00",
+    "isNN": true,
+    "status": "pending",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 18,
+    "name": "Grooming",
+    "time": "08:15",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      0,
+      2
+    ],
+    "completedDates": [],
+    "duration": 15,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 19,
+    "name": "No Instagram before 12PM",
+    "time": "11:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      1,
+      4
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 20,
+    "name": "Munching snacks",
+    "time": "16:00",
+    "isNN": false,
+    "isBad": true,
+    "status": "pending",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "monthly": false
+  },
+  {
+    "id": 21,
+    "name": "Organize Shekem",
+    "time": "17:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      0
+    ],
+    "completedDates": [],
+    "duration": 210,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 22,
+    "name": "Trip",
+    "time": "10:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [],
+    "monthly": true,
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false
+  },
+  {
+    "id": 23,
+    "name": "Weighing myself",
+    "time": "07:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 24,
+    "name": "Weekly physique photo",
+    "time": "07:30",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      6
+    ],
+    "completedDates": [],
+    "duration": 0,
+    "isBad": false,
+    "monthly": false
+  },
+  {
+    "id": 25,
+    "name": "Weekly journal",
+    "time": "21:00",
+    "isNN": false,
+    "status": "pending",
+    "days": [
+      6
+    ],
+    "completedDates": [],
+    "duration": 60,
+    "isBad": false,
+    "monthly": false
+  }
 ]
