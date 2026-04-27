@@ -3,7 +3,7 @@ name: Morning Habit Reminder
 on:
   schedule:
     - cron: '0 6 * * *'   # 9:00 AM Israel time (UTC+3)
-  workflow_dispatch:        # allows manual trigger from GitHub
+  workflow_dispatch:
 
 jobs:
   send-reminder:
@@ -12,12 +12,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Send WhatsApp reminder + sync Google Calendar
+      - name: Send WhatsApp reminder
         env:
-          TWILIO_SID:             ${{ secrets.TWILIO_SID }}
-          TWILIO_TOKEN:           ${{ secrets.TWILIO_TOKEN }}
-          GOOGLE_CLIENT_ID:       ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET:   ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_REFRESH_TOKEN:   ${{ secrets.GOOGLE_REFRESH_TOKEN }}
-          GOOGLE_CALENDAR_ID:     ${{ secrets.GOOGLE_CALENDAR_ID }}
+          TWILIO_SID:   ${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
         run: python3 send_reminder.py

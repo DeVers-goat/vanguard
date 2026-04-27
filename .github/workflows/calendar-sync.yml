@@ -1,0 +1,21 @@
+name: Morning Calendar Sync
+
+on:
+  schedule:
+    - cron: '0 5 * * *'   # 8:00 AM Israel time (UTC+3)
+  workflow_dispatch:
+
+jobs:
+  sync-calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync habits to Google Calendar
+        env:
+          GOOGLE_CLIENT_ID:     ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          GOOGLE_CALENDAR_ID:   ${{ secrets.GOOGLE_CALENDAR_ID }}
+        run: python3 sync_calendar.py
