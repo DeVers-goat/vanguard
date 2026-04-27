@@ -4,15 +4,17 @@ import json, urllib.request, urllib.parse, os, datetime
 with open('habits.json', encoding='utf-8-sig') as f:
     habits = json.load(f)
 
-today_dow = datetime.datetime.now().weekday() + 1  # Mon=1…Sun=0 → convert
-# Python weekday(): Mon=0…Sun=6. JS getDay(): Sun=0…Sat=6.
-# Convert: Python 0→JS 1, Python 6→JS 0
-js_dow = (datetime.datetime.now().weekday() + 1) % 7  # Sun=0,Mon=1,…,Sat=6
+# Always use Israel time (UTC+3) regardless of server timezone
+israel = datetime.timezone(datetime.timedelta(hours=3))
+now = datetime.datetime.now(israel)
+
+# Python weekday(): Mon=0…Sun=6 → JS getDay(): Sun=0,Mon=1,…,Sat=6
+js_dow = (now.weekday() + 1) % 7
 
 today_habits = [h for h in habits if js_dow in (h.get('days') or [])]
 nn  = [h['name'] for h in today_habits if h.get('isNN')]
 reg = [h['name'] for h in today_habits if not h.get('isNN') and not h.get('isBad')]
-today_label = datetime.datetime.now().strftime('%A, %B %-d')
+today_label = now.strftime('%A, %B %-d')
 
 # ── WhatsApp message ─────────────────────────────────────────────────────────
 msg  = f"Good morning! Plan for {today_label}\n\n"
@@ -62,21 +64,16 @@ else:
         token_resp = json.loads(urllib.request.urlopen(token_req).read())
         access_token = token_resp['access_token']
 
-        today_date = datetime.datetime.now().strftime('%Y-%m-%d')
         created = 0
 
         for h in gcal_habits:
             hh, mm = map(int, h['time'].split(':'))
             start_dt = datetime.datetime(
-                datetime.datetime.now().year,
-                datetime.datetime.now().month,
-                datetime.datetime.now().day,
-                hh, mm
+                now.year, now.month, now.day, hh, mm,
+                tzinfo=israel
             )
             end_dt = start_dt + datetime.timedelta(minutes=h['duration'])
-
-            def fmt(dt):
-                return dt.strftime('%Y-%m-%dT%H:%M:%S')
+            fmt = lambda dt: dt.strftime('%Y-%m-%dT%H:%M:%S')
 
             event = {
                 'summary': h['name'],
