@@ -2,7 +2,7 @@ name: Morning Calendar Sync
 
 on:
   schedule:
-    - cron: '10 7 * * *'   # 10:10 AM Israel time (UTC+3)
+    - cron: '20 7 * * *'   # 10:20 AM Israel time (UTC+3)
   workflow_dispatch:
 
 jobs:
