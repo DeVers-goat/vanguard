@@ -1753,43 +1753,54 @@ function App() {
     return()=>window.removeEventListener('resize',h);
   },[]);
 
-  // Daily reset at midnight — silently reset habits except monthly + perfect-week ones
-  useEffect(()=>{
-    const lastReset=localStorage.getItem('vg_last_reset')||'';
-    const todayStr=today();
-    if(lastReset===todayStr)return;
-    const weekDates=getWeekDates();
-    setHabits(h=>h.map(habit=>{
-      if(habit.monthly)return habit;
-      const scheduled=(habit.days||[]).filter(d=>d<7).length;
-      const done=(habit.completedDates||[]).filter(d=>weekDates.includes(d)).length;
-      if(scheduled>0&&done>=scheduled)return habit; // perfect week — keep gold outline
-      return{...habit,status:'pending'};
-    }));
-    localStorage.setItem('vg_last_reset',todayStr);
-  },[]);
+  const initialLoadDone = useRef(false);
 
-  // Load habits from GitHub on mount (source of truth for cross-device sync)
+  // On mount: load from GitHub first, then apply daily reset — single source of truth
   useEffect(()=>{
-    const load=async()=>{
+    const migrate=h=>{
+      const def=INIT_HABITS.find(x=>x.id===h.id);
+      return{...h,name:def?.name??h.name,isNN:def?.isNN??h.isNN,isBad:def?.isBad??h.isBad??false,days:h.days??def?.days??[],monthly:h.monthly??def?.monthly??false,completedDates:h.completedDates??[],duration:h.duration??def?.duration??0};
+    };
+    const applyReset=habits=>{
+      const lastReset=localStorage.getItem('vg_last_reset')||'';
+      const todayStr=today();
+      if(lastReset===todayStr)return habits;
+      const weekDates=getWeekDates();
+      const reset=habits.map(habit=>{
+        if(habit.monthly)return habit;
+        const scheduled=(habit.days||[]).filter(d=>d<7).length;
+        const done=(habit.completedDates||[]).filter(d=>weekDates.includes(d)).length;
+        if(scheduled>0&&done>=scheduled)return habit;
+        return{...habit,status:'pending'};
+      });
+      localStorage.setItem('vg_last_reset',todayStr);
+      return reset;
+    };
+    const init=async()=>{
+      let habits=null;
       try{
         const resp=await fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/habits.json?_=${Date.now()}`);
-        if(!resp.ok)return;
-        const remote=await resp.json();
-        if(!Array.isArray(remote)||remote.length===0)return;
-        const migrated=remote.map(h=>{
-          const def=INIT_HABITS.find(x=>x.id===h.id);
-          return{...h,name:def?.name??h.name,isNN:def?.isNN??h.isNN,isBad:def?.isBad??h.isBad??false,days:h.days??def?.days??[],monthly:h.monthly??def?.monthly??false,completedDates:h.completedDates??[],duration:h.duration??def?.duration??0};
-        });
-        setHabits(migrated);
-        try{localStorage.setItem("vg_habits",JSON.stringify(migrated));}catch{}
+        if(resp.ok){
+          const remote=await resp.json();
+          if(Array.isArray(remote)&&remote.length>0) habits=remote.map(migrate);
+        }
       }catch{}
+      if(!habits){
+        // Fallback to localStorage
+        try{const s=localStorage.getItem("vg_habits");if(s)habits=JSON.parse(s).map(migrate);}catch{}
+      }
+      if(!habits) habits=INIT_HABITS;
+      habits=applyReset(habits);
+      try{localStorage.setItem("vg_habits",JSON.stringify(habits));}catch{}
+      setHabits(habits);
+      initialLoadDone.current=true;
     };
-    load();
+    init();
   },[]);
 
-  // Persist habits to localStorage + habits.json + GitHub auto-push
+  // Persist habits to localStorage + habits.json + GitHub auto-push (skip during initial load)
   useEffect(()=>{
+    if(!initialLoadDone.current)return;
     try{ localStorage.setItem("vg_habits", JSON.stringify(habits)); }catch{}
     writeHabitsFile(habits);
     pushHabitsToGitHub(habits);
