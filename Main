@@ -129,6 +129,35 @@ input:focus,textarea:focus{border-color:rgba(124,110,248,.5)!important;box-shado
 
 /* prefers-reduced-motion */
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+
+/* Habit completion sweep — progressive fill with shining edge */
+@keyframes habitFill{0%{width:0}100%{width:100%}}
+@keyframes habitEdge{0%{left:-18px;opacity:0}6%{opacity:1}92%{left:calc(100% - 18px);opacity:1}100%{left:calc(100% - 18px);opacity:0}}
+.habit-sweep-overlay{position:absolute;inset:0;pointer-events:none;z-index:9;border-radius:inherit;}
+.habit-sweep-fill{position:absolute;top:0;left:0;bottom:0;width:0;background:rgba(45,212,160,.16);animation:habitFill 1.4s cubic-bezier(.3,0,.2,1) forwards;}
+.habit-sweep-edge{position:absolute;top:-1px;bottom:-1px;left:-18px;width:36px;background:linear-gradient(90deg,transparent,rgba(80,255,170,.5) 30%,rgba(160,255,210,1) 50%,rgba(80,255,170,.5) 70%,transparent);filter:blur(2px);animation:habitEdge 1.4s cubic-bezier(.3,0,.2,1) forwards;}
+
+/* Gold sparkling outline for perfect-week habits */
+@keyframes goldSparkle{
+  0%,100%{box-shadow:0 0 0 1.5px rgba(228,184,74,.55),0 0 8px rgba(228,184,74,.25);}
+  25%{box-shadow:0 0 0 2px rgba(255,220,80,1),0 0 18px rgba(228,184,74,.55),0 0 32px rgba(228,184,74,.2);}
+  50%{box-shadow:0 0 0 1.5px rgba(228,184,74,.65),0 0 10px rgba(228,184,74,.3);}
+  75%{box-shadow:0 0 0 2px rgba(255,235,100,1),0 0 22px rgba(228,184,74,.6),0 0 38px rgba(228,184,74,.22);}
+}
+.habit-gold{animation:goldSparkle 2.2s ease-in-out infinite;border-radius:4px;overflow:hidden;}
+
+/* Desktop layout */
+@media(min-width:1024px){
+  body{max-width:none!important;margin:0!important;}
+  .desktop-content{margin-left:260px;transition:margin-left .25s cubic-bezier(.22,1,.36,1);}
+  .desktop-content.sidebar-collapsed{margin-left:52px;}
+  .desktop-sidebar{display:flex!important;}
+  .mobile-nav{display:none!important;}
+  .mobile-status-bar{display:none!important;}
+}
+@media(max-width:1023px){
+  .desktop-sidebar{display:none!important;}
+}
 `;
 document.head.appendChild(_st);
 
@@ -488,8 +517,12 @@ function YearBar() {
 }
 
 /* ── HABIT ROW ───────────────────────────────────────── */
-function HabitRow({h,idx,editMode,onCycle,onRename,onToggleNN,onToggleBad,onToggleDay,onSetDuration,onSetTime,onDelete,showTime=false}) {
+function HabitRow({h,idx,editMode,onCycle,onRename,onToggleNN,onToggleBad,onToggleDay,onSetDuration,onSetTime,onDelete,showTime=false,sweeping=false}) {
   const [nm,setNm]=useState(h.name);
+  const weekDates=getWeekDates();
+  const scheduled=(h.days||[]).filter(d=>d<7).length;
+  const doneThisWeek=(h.completedDates||[]).filter(d=>weekDates.includes(d)).length;
+  const isPerfectWeek=scheduled>0&&doneThisWeek>=scheduled;
   // For bad habits: complete=avoided(good/green), failed=indulged(red)
   const sc={
     complete:{border:"var(--em)",bg:"var(--em1)",color:"var(--em)"},
@@ -511,9 +544,10 @@ function HabitRow({h,idx,editMode,onCycle,onRename,onToggleNN,onToggleBad,onTogg
   const rowBg = h.status==="complete"?"rgba(45,212,160,.03)":h.isBad&&h.status==="failed"?"rgba(240,98,146,.04)":"rgba(8,8,15,.45)";
   const rowHover = h.status==="complete"?"rgba(45,212,160,.05)":h.isBad?"rgba(240,98,146,.06)":"rgba(255,255,255,.04)";
   return (
-    <div style={{display:"flex",alignItems:"center",gap:13,padding:"14px 22px",background:rowBg,borderBottom:"1px solid rgba(255,255,255,.04)",position:"relative",animationDelay:`${idx*.03}s`,transition:"background .22s ease"}} className="au"
+    <div style={{display:"flex",alignItems:"center",gap:13,padding:"14px 22px",background:rowBg,borderBottom:"1px solid rgba(255,255,255,.04)",position:"relative",animationDelay:`${idx*.03}s`,transition:"background .22s ease"}} className={`au${isPerfectWeek?" habit-gold":""}`}
       onMouseEnter={e=>e.currentTarget.style.background=rowHover}
       onMouseLeave={e=>e.currentTarget.style.background=rowBg}>
+      {sweeping&&<div className="habit-sweep-overlay"><div className="habit-sweep-fill"/><div className="habit-sweep-edge"/></div>}
       <div style={{position:"absolute",left:0,top:8,bottom:8,width:3,borderRadius:"0 3px 3px 0",background:barBg,boxShadow:barShadow,transition:"all .3s ease"}}/>
       {editMode?<div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -542,7 +576,7 @@ function HabitRow({h,idx,editMode,onCycle,onRename,onToggleNN,onToggleBad,onTogg
 /* ════════════════════════════════════════════════════
    HOME SCREEN
 ════════════════════════════════════════════════════ */
-function HomeScreen({habits,goals,onCycle,onSync}) {
+function HomeScreen({habits,goals,onCycle,onSync,sweepingId,isDesktop}) {
   const nn=habits.filter(h=>h.isNN),nnDone=nn.filter(h=>h.status==="complete").length;
   const todayDow=new Date().getDay();
   const todayHabits=habits.filter(h=>!h.isNN&&!h.isBad&&!h.monthly&&(h.days||[]).includes(todayDow));
@@ -575,12 +609,12 @@ function HomeScreen({habits,goals,onCycle,onSync}) {
       <div style={{margin:"22px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Non-Negotiables</Lbl><Tag cls="em">{nnDone}/{nn.length}</Tag></div>
       <div className="stagger" style={{borderTop:"1px solid var(--e0)"}}>
         {nn.length===0?<div style={{padding:22,textAlign:"center",fontFamily:"var(--fm)",fontSize:10,color:"var(--t1)"}}>No Non-Negotiables set</div>
-          :nn.map((h,i)=><HabitRow key={h.id} h={h} idx={i} onCycle={onCycle} showTime/>)}
+          :nn.map((h,i)=><HabitRow key={h.id} h={h} idx={i} onCycle={onCycle} showTime sweeping={sweepingId===h.id}/>)}
       </div>
       <div style={{margin:"22px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>To Do Today</Lbl><Tag cls="p">{todayDone}/{todayHabits.length}</Tag></div>
       <div className="stagger" style={{borderTop:"1px solid var(--e0)"}}>
         {todayHabits.length===0?<div style={{padding:"16px 22px",fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".1em"}}>Nothing else scheduled today</div>
-          :todayHabits.map((h,i)=><HabitRow key={h.id} h={h} idx={i} onCycle={onCycle} showTime/>)}
+          :todayHabits.map((h,i)=><HabitRow key={h.id} h={h} idx={i} onCycle={onCycle} showTime sweeping={sweepingId===h.id}/>)}
       </div>
       <button onClick={onSync} style={{margin:"16px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",width:"calc(100% - 44px)"}}>
         {pfI()} Sync to {pfL()}
@@ -617,7 +651,7 @@ const DayPicker = ({days, onToggle}) => {
   );
 };
 
-function HabitsScreen({habits,setHabits,nHid,setNHid,onSync,onSetupExport,onReview}) {
+function HabitsScreen({habits,setHabits,nHid,setNHid,onSync,onSetupExport,onReview,sweepingId,isDesktop}) {
   const [em,setEm]=useState(false);
   const [showOther,setShowOther]=useState(false);
   const td=today();
@@ -643,7 +677,7 @@ function HabitsScreen({habits,setHabits,nHid,setNHid,onSync,onSetupExport,onRevi
   const otherHabits=habits.filter(h=>!h.isNN&&!h.isBad&&!h.monthly&&!(h.days||[]).includes(todayDow));
   const monthlyHabits=habits.filter(h=>h.monthly);
   const bad=habits.filter(h=>h.isBad);
-  const rowProps={editMode:em,onCycle,onRename,onToggleNN,onToggleBad,onToggleDay,onSetDuration,onSetTime,onDelete};
+  const mkRow=(h,i)=><HabitRow key={h.id} h={h} idx={i} editMode={em} onCycle={onCycle} onRename={onRename} onToggleNN={onToggleNN} onToggleBad={onToggleBad} onToggleDay={onToggleDay} onSetDuration={onSetDuration} onSetTime={onSetTime} onDelete={onDelete} sweeping={sweepingId===h.id}/>;
   return (
     <div style={C.screen}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"22px 22px 18px"}}>
@@ -654,17 +688,21 @@ function HabitsScreen({habits,setHabits,nHid,setNHid,onSync,onSetupExport,onRevi
         </div>
       </div>
       <YearBar/>
-      {/* Non-Negotiables */}
-      <div style={{margin:"20px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Non-Negotiables</Lbl><Tag cls="em">{nn.filter(h=>h.status==="complete").length}/{nn.length}</Tag></div>
-      <div className="stagger" style={{borderTop:"1px solid var(--e0)"}}>{nn.map((h,i)=><HabitRow key={h.id} h={h} idx={i} {...rowProps}/>)}</div>
-      {em&&<button onClick={()=>onAdd(true)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"13px 22px",background:"none",border:"none",borderBottom:"1px solid var(--e0)",fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer"}}><span style={{fontSize:16}}>+</span> Add Non-Negotiable</button>}
-      {/* To Do Today */}
-      <div style={{margin:"20px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>To Do Today</Lbl><Tag cls="p">{todayHabits.filter(h=>h.status==="complete").length}/{todayHabits.length}</Tag></div>
-      <div className="stagger" style={{borderTop:"1px solid var(--e0)"}}>
-        {todayHabits.length===0?<div style={{padding:"16px 22px",fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".1em"}}>Nothing scheduled for today</div>
-          :todayHabits.map((h,i)=><HabitRow key={h.id} h={h} idx={i} {...rowProps}/>)}
+      {/* Non-Negotiables + To Do Today — unified grid on desktop */}
+      <div style={{margin:"20px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <Lbl>Today's Habits</Lbl>
+        <div style={{display:"flex",gap:8}}>
+          <Tag cls="em">{nn.filter(h=>h.status==="complete").length}/{nn.length} NN</Tag>
+          <Tag cls="p">{todayHabits.filter(h=>h.status==="complete").length}/{todayHabits.length}</Tag>
+        </div>
       </div>
-      {em&&<button onClick={()=>onAdd(false)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"13px 22px",background:"none",border:"none",borderBottom:"1px solid var(--e0)",fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer"}}><span style={{fontSize:16}}>+</span> Add Habit</button>}
+      <div className="stagger" style={{borderTop:"1px solid var(--e0)",display:isDesktop?"grid":"block",gridTemplateColumns:isDesktop?"1fr 1fr":"none"}}>
+        {[...nn,...todayHabits].length===0
+          ?<div style={{padding:"16px 22px",fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".1em"}}>Nothing scheduled for today</div>
+          :[...nn,...todayHabits].map(mkRow)}
+      </div>
+      {em&&<><button onClick={()=>onAdd(true)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"13px 22px",background:"none",border:"none",borderBottom:"1px solid var(--e0)",fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer"}}><span style={{fontSize:16}}>+</span> Add Non-Negotiable</button>
+      <button onClick={()=>onAdd(false)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"13px 22px",background:"none",border:"none",borderBottom:"1px solid var(--e0)",fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t1)",cursor:"pointer"}}><span style={{fontSize:16}}>+</span> Add Habit</button></> }
       {/* Other Habits (not today) */}
       {(otherHabits.length>0||em)&&<>
         <button onClick={()=>setShowOther(v=>!v)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"16px 22px 10px",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
@@ -675,17 +713,17 @@ function HabitsScreen({habits,setHabits,nHid,setNHid,onSync,onSetupExport,onRevi
           </div>
         </button>
         {showOther&&<div className="stagger" style={{borderTop:"1px solid rgba(255,255,255,.04)",opacity:.75}}>
-          {otherHabits.map((h,i)=><HabitRow key={h.id} h={h} idx={i} {...rowProps}/>)}
+          {otherHabits.map(mkRow)}
         </div>}
       </>}
       {/* Monthly */}
       {monthlyHabits.length>0&&<>
         <div style={{margin:"16px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl style={{opacity:.5,fontSize:7}}>Monthly</Lbl><Tag cls="dim">{monthlyHabits.filter(h=>h.status==="complete").length}/{monthlyHabits.length}</Tag></div>
-        <div style={{borderTop:"1px solid rgba(255,255,255,.04)",opacity:.7}}>{monthlyHabits.map((h,i)=><HabitRow key={h.id} h={h} idx={i} {...rowProps}/>)}</div>
+        <div style={{borderTop:"1px solid rgba(255,255,255,.04)",opacity:.7}}>{monthlyHabits.map(mkRow)}</div>
       </>}
       {/* Bad Habits */}
       {bad.length>0&&<><div style={{margin:"20px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl style={{color:"var(--ro)"}}>Bad Habits</Lbl><Tag cls="ro">{bad.filter(h=>h.status==="complete").length}/{bad.length} avoided</Tag></div>
-      <div className="stagger" style={{borderTop:"1px solid rgba(240,98,146,.15)"}}>{bad.map((h,i)=><HabitRow key={h.id} h={h} idx={i} {...rowProps}/>)}</div></>}
+      <div className="stagger" style={{borderTop:"1px solid rgba(240,98,146,.15)"}}>{bad.map(mkRow)}</div></>}
       <div style={{margin:"16px 22px 0",display:"flex",gap:10}}>
         <button onClick={onSync} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer"}}>
           {pfI()} Sync Calendar
@@ -1237,7 +1275,38 @@ function SyncSheet({habits,open,onClose,toast}) {
 /* ════════════════════════════════════════════════════
    PROFILE SCREEN
 ════════════════════════════════════════════════════ */
-function ProfileScreen({habits,onSync,googleApiKey,googleClientId,googleConfigStatus,setGoogleApiKey,setGoogleClientId,saveGoogleConfig,connectGoogle}) {
+function FilledField({label,storageKey,placeholder,onSave,type="text",hint}) {
+  const inp={width:"100%",padding:"13px 16px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,color:"var(--t6)",fontFamily:"var(--fb)",fontSize:15,fontWeight:500,caretColor:"var(--p)",display:"block",boxSizing:"border-box"};
+  const [editing,setEditing]=useState(false);
+  const [val,setVal]=useState("");
+  const [stored,setStored]=useState(!!localStorage.getItem(storageKey));
+  const save=()=>{
+    if(!val.trim())return;
+    localStorage.setItem(storageKey,val.trim());
+    if(onSave)onSave(val.trim());
+    setEditing(false);setVal("");setStored(true);
+  };
+  return (
+    <div style={{marginBottom:16}}>
+      <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase",marginBottom:7}}>{label}</div>
+      {stored&&!editing?(
+        <div style={{position:"relative"}}>
+          <input readOnly value="Already filled" style={{...inp,color:"var(--t2)",cursor:"default",paddingRight:96}}/>
+          <button onClick={()=>setEditing(true)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",padding:"5px 13px",background:"rgba(124,110,248,.12)",border:"1px solid rgba(124,110,248,.25)",borderRadius:8,color:"var(--p)",fontFamily:"var(--fm)",fontSize:8,letterSpacing:".1em",textTransform:"uppercase",cursor:"pointer"}}>Change</button>
+        </div>
+      ):(
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <input value={val} onChange={e=>setVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder={placeholder} style={{...inp,flex:1}} type={type} autoFocus={editing}/>
+          <button onClick={save} style={{padding:"13px 16px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:10,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".14em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",flexShrink:0}}>Save</button>
+          {editing&&<button onClick={()=>{setEditing(false);setVal("");}} style={{padding:"13px 10px",background:"none",border:"none",color:"var(--ro)",fontSize:18,cursor:"pointer",flexShrink:0}}>×</button>}
+        </div>
+      )}
+      {hint&&<div style={{fontSize:10,color:"var(--t1)",lineHeight:1.55,marginTop:7}}>{hint}</div>}
+    </div>
+  );
+}
+
+function ProfileScreen({habits,onSync,googleApiKey,googleClientId,googleConfigStatus,setGoogleApiKey,setGoogleClientId,saveGoogleConfig,connectGoogle,toast}) {
   const done=habits.filter(h=>h.status==="complete").length,tot=habits.length,pct=tot?Math.round(done/tot*100):0;
   const nn=habits.filter(h=>h.isNN);
   const [w,setW]=useState(0);
@@ -1248,24 +1317,18 @@ function ProfileScreen({habits,onSync,googleApiKey,googleClientId,googleConfigSt
       <div style={{margin:"0 22px 18px"}}>
         <Lbl style={{fontSize:7,marginBottom:12}}>Google Calendar Setup</Lbl>
         <div style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,padding:18,marginBottom:18}}>
-          <div style={{display:"grid",gap:14}}>
-            <div>
-              <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase",marginBottom:6}}>API Key</div>
-              <input value={googleApiKey} onChange={e=>setGoogleApiKey(e.target.value)} placeholder="Paste your Google API key" style={C.finput}/>
-            </div>
-            <div>
-              <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase",marginBottom:6}}>OAuth Client ID</div>
-              <input value={googleClientId} onChange={e=>setGoogleClientId(e.target.value)} placeholder="Paste your OAuth 2.0 Client ID" style={C.finput}/>
-            </div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-              <button className="btn-shine btn-lift" style={C.btnPri} onClick={saveGoogleConfig}>Save settings</button>
-              {googleApiKey && googleClientId && <button style={{...C.btnPri,background:"rgba(45,212,160,.15)",border:"1px solid rgba(45,212,160,.3)",color:"var(--em)"}} onClick={connectGoogle}>Connect →</button>}
-            </div>
-            <div style={{fontSize:10,color:"var(--t2)",lineHeight:1.6}}>{googleConfigStatus}</div>
-            <div style={{fontSize:10,color:"var(--t3)",lineHeight:1.6,marginTop:10}}>
-              Steps: create a project in Google Cloud, enable the Calendar API, create an API key, create an OAuth 2.0 Client ID, and set the authorized origin to your app's address (for local use, serve from http://localhost). Use these values here to connect.
-            </div>
+          <FilledField label="API Key" storageKey="vg_google_api_key" placeholder="Paste your Google API key" onSave={v=>{setGoogleApiKey(v);}}/>
+          <FilledField label="OAuth Client ID" storageKey="vg_google_client_id" placeholder="Paste your OAuth 2.0 Client ID" onSave={v=>{setGoogleClientId(v);}}/>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+            {localStorage.getItem("vg_google_api_key")&&localStorage.getItem("vg_google_client_id")&&<button style={{...C.btnPri,background:"rgba(45,212,160,.15)",border:"1px solid rgba(45,212,160,.3)",color:"var(--em)"}} onClick={connectGoogle}>Connect Calendar →</button>}
           </div>
+          <div style={{fontSize:10,color:"var(--t2)",lineHeight:1.6}}>{googleConfigStatus}</div>
+        </div>
+      </div>
+      <div style={{margin:"0 22px 18px"}}>
+        <Lbl style={{fontSize:7,marginBottom:12}}>GitHub Auto-Sync</Lbl>
+        <div style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,padding:18}}>
+          <FilledField label="Personal Access Token" storageKey="vg_github_token" placeholder="Paste your GitHub token" type="password" hint="Habits auto-push to GitHub on every check-off. Needs repo scope." onSave={()=>toast("✓ GitHub token saved")}/>
         </div>
       </div>
       <div style={{margin:"0 22px 18px",padding:"22px 22px 20px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,position:"relative",overflow:"hidden"}}>
@@ -1490,6 +1553,138 @@ function WeeklyReviewSheet({habits,open,onClose,toast}) {
 }
 
 /* ════════════════════════════════════════════════════
+   AUTH — LOGIN + APP ROOT
+════════════════════════════════════════════════════ */
+const ALLOWED_EMAIL = "ran.varsano@gmail.com";
+const ALLOWED_CLIENT_ID = "980450679027-bffme0pdvmqqi0v6tt4vjaf4gtpcqg0t.apps.googleusercontent.com";
+
+function LoginScreen({onAuth}) {
+  const [error,setError] = useState("");
+  const [clientId,setClientId] = useState(()=>localStorage.getItem("vg_google_client_id")||"");
+  const [saved,setSaved] = useState(!!localStorage.getItem("vg_google_client_id"));
+  const btnRef = useRef(null);
+
+  useEffect(()=>{
+    if(!saved||!clientId||!window.google)return;
+    try{
+      window.google.accounts.id.initialize({
+        client_id:clientId,
+        callback:(resp)=>{
+          try{
+            const payload=JSON.parse(atob(resp.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+            if(payload.email===ALLOWED_EMAIL){
+              localStorage.setItem("vg_auth",JSON.stringify({email:payload.email,name:payload.name,picture:payload.picture,exp:payload.exp}));
+              onAuth();
+            }else{
+              setError("Access denied. This app is private.");
+            }
+          }catch{setError("Sign-in failed. Try again.");}
+        }
+      });
+      if(btnRef.current){
+        window.google.accounts.id.renderButton(btnRef.current,{theme:"filled_black",size:"large",shape:"pill",width:280});
+      }
+    }catch(e){setError("Google Sign-In failed to load.");}
+  },[saved,clientId]);
+
+  return (
+    <div style={{minHeight:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"var(--canvas)",padding:32,position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:"20%",left:"50%",transform:"translateX(-50%)",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(124,110,248,.08),transparent 70%)",pointerEvents:"none"}}/>
+      <div style={{fontFamily:"var(--fd)",fontSize:52,fontWeight:800,letterSpacing:".04em",background:"linear-gradient(135deg,#818cf8,#67e8f9 60%,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",marginBottom:8,animation:"textReveal .8s ease both"}}>VANGUARD</div>
+      <div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t2)",letterSpacing:".28em",textTransform:"uppercase",marginBottom:52,animation:"fadeUp .6s .2s ease both"}}>Private Dashboard</div>
+      {!saved&&(
+        <div style={{width:"100%",maxWidth:320,marginBottom:24,animation:"fadeUp .6s .3s ease both"}}>
+          <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".16em",textTransform:"uppercase",marginBottom:8}}>Google Client ID</div>
+          <input value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="Paste your Google OAuth Client ID" style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:16,color:"var(--t6)",fontFamily:"var(--fb)",fontSize:14,caretColor:"var(--p)",marginBottom:10,display:"block",boxSizing:"border-box"}}/>
+          <button onClick={()=>{
+            const id=clientId.trim();
+            if(id!==ALLOWED_CLIENT_ID){setError("Access denied.");return;}
+            localStorage.setItem("vg_google_client_id",id);setSaved(true);setError("");
+          }} style={{width:"100%",padding:14,background:"linear-gradient(135deg,#5d50e6,#7c6ef8)",borderRadius:14,color:"#fff",fontFamily:"var(--fd)",fontSize:13,letterSpacing:".1em",cursor:"pointer",border:"none"}}>Save & Continue</button>
+        </div>
+      )}
+      {saved&&<div ref={btnRef} style={{animation:"fadeUp .5s .1s ease both"}}/>}
+      {error&&<div style={{marginTop:16,fontFamily:"var(--fm)",fontSize:10,color:"var(--ro)",letterSpacing:".08em"}}>{error}</div>}
+      {saved&&<button onClick={()=>{localStorage.removeItem("vg_google_client_id");setSaved(false);setClientId("");}} style={{marginTop:20,background:"none",border:"none",fontFamily:"var(--fm)",fontSize:8,color:"var(--t1)",letterSpacing:".12em",cursor:"pointer",textDecoration:"underline",textTransform:"uppercase"}}>Change Client ID</button>}
+    </div>
+  );
+}
+
+function AppRoot() {
+  const [authed,setAuthed] = useState(()=>{
+    try{
+      const a=JSON.parse(localStorage.getItem("vg_auth")||"null");
+      if(!a)return false;
+      if(Date.now()/1000>a.exp){localStorage.removeItem("vg_auth");return false;}
+      return true;
+    }catch{return false;}
+  });
+  if(!authed)return <LoginScreen onAuth={()=>setAuthed(true)}/>;
+  return <App/>;
+}
+
+/* ════════════════════════════════════════════════════
+   SIDEBAR (desktop only)
+════════════════════════════════════════════════════ */
+function Sidebar({screen,navigate,habits,goals,onCollapseChange}) {
+  const [collapsed,setCollapsed]=useState(()=>localStorage.getItem("vg_sidebar_collapsed")==="1");
+  const toggle=()=>{const n=!collapsed;setCollapsed(n);localStorage.setItem("vg_sidebar_collapsed",n?"1":"0");if(onCollapseChange)onCollapseChange(n);};
+  const todayDow=new Date().getDay();
+  const todayH=habits.filter(h=>!h.isNN&&!h.isBad&&!h.monthly&&(h.days||[]).includes(todayDow));
+  const nn=habits.filter(h=>h.isNN);
+  const nnDone=nn.filter(h=>h.status==="complete").length;
+  const todayDone=todayH.filter(h=>h.status==="complete").length;
+  const user=JSON.parse(localStorage.getItem("vg_auth")||"{}");
+  const NAV=[{id:"home",ni:"⬡",nl:"Home"},{id:"habits",ni:"◈",nl:"Habits"},{id:"goals",ni:"⬢",nl:"Goals"},{id:"library",ni:"📖",nl:"Library"},{id:"profile",ni:"◉",nl:"Profile"}];
+  const signOut=()=>{localStorage.removeItem("vg_auth");window.location.reload();};
+  const W=collapsed?52:260;
+  return (
+    <div className="desktop-sidebar" style={{position:"fixed",top:0,left:0,bottom:0,width:W,background:"rgba(8,8,14,.98)",borderRight:"1px solid rgba(255,255,255,.06)",zIndex:200,flexDirection:"column",padding:"0 0 20px",backdropFilter:"blur(40px)",transition:"width .25s cubic-bezier(.22,1,.36,1)",overflow:"hidden"}}>
+      {/* Branding + collapse toggle */}
+      <div style={{padding:"24px 12px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",minWidth:0,borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+        {!collapsed&&<div style={{minWidth:0}}>
+          <div style={{fontFamily:"var(--fd)",fontSize:15,fontWeight:800,letterSpacing:".08em",background:"linear-gradient(135deg,#818cf8,#67e8f9)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",whiteSpace:"nowrap"}}>THE VANGUARD</div>
+          <div style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".2em",textTransform:"uppercase",marginTop:3}}>Personal OS</div>
+        </div>}
+        <button onClick={toggle} style={{width:28,height:28,borderRadius:8,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",color:"var(--t2)",fontSize:12,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",marginLeft:collapsed?0:"auto",transition:"all .2s ease"}}>
+          {collapsed?"›":"‹"}
+        </button>
+      </div>
+      {/* Nav */}
+      <div style={{flex:1,padding:"12px 6px",display:"flex",flexDirection:"column",gap:2,overflowY:"auto",overflowX:"hidden"}}>
+        {NAV.map(({id,ni,nl})=>(
+          <button key={id} onClick={()=>navigate(id)} title={collapsed?nl:""} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:10,border:"none",cursor:"pointer",width:"100%",textAlign:"left",background:screen===id?"linear-gradient(135deg,rgba(124,110,248,.2),rgba(124,110,248,.09))":"transparent",color:screen===id?"var(--p)":"var(--t2)",transition:"all .18s ease",boxShadow:screen===id?"0 0 0 1px rgba(124,110,248,.22)":"none",justifyContent:collapsed?"center":"flex-start"}}>
+            <span style={{fontSize:16,flexShrink:0,filter:screen===id?"drop-shadow(0 0 6px rgba(124,110,248,.6))":"none"}}>{ni}</span>
+            {!collapsed&&<span style={{fontFamily:"var(--fb)",fontSize:13,fontWeight:screen===id?600:400,flex:1,whiteSpace:"nowrap",overflow:"hidden"}}>{nl}</span>}
+            {!collapsed&&screen===id&&<div style={{width:5,height:5,borderRadius:"50%",background:"var(--p)",boxShadow:"0 0 8px var(--p)",flexShrink:0}}/>}
+          </button>
+        ))}
+      </div>
+      {/* Today's progress — hidden when collapsed */}
+      {!collapsed&&<div style={{margin:"0 8px 12px",padding:"13px 14px",background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.05)",borderRadius:14}}>
+        <div style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase",marginBottom:10}}>Today</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)"}}>Non-Neg</span>
+          <span style={{fontFamily:"var(--fd)",fontSize:14,fontWeight:800,color:"var(--em)"}}>{nnDone}/{nn.length}</span>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)"}}>To Do</span>
+          <span style={{fontFamily:"var(--fd)",fontSize:14,fontWeight:800,color:"var(--p)"}}>{todayDone}/{todayH.length}</span>
+        </div>
+      </div>}
+      {/* Profile */}
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"0 10px",cursor:"pointer",justifyContent:collapsed?"center":"flex-start"}} onClick={signOut} title={collapsed?`Sign out (${user.name||""})`:""}>
+        {user.picture&&<img src={user.picture} style={{width:28,height:28,borderRadius:"50%",border:"1px solid rgba(255,255,255,.1)",flexShrink:0}} alt=""/>}
+        {!collapsed&&<div style={{minWidth:0}}>
+          <div style={{fontFamily:"var(--fb)",fontSize:12,color:"var(--t4)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.name||"Vanguard"}</div>
+          <div style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".06em"}}>Sign out</div>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════
    ROOT APP
 ════════════════════════════════════════════════════ */
 function App() {
@@ -1520,22 +1715,66 @@ function App() {
   const [nHid,setNHid]     = useState(26);
   const [nGid,setNGid]     = useState(4);
   const [nBid,setNBid]     = useState(1);
-  const [googleApiKey,setGoogleApiKey] = useState("");
-  const [googleClientId,setGoogleClientId] = useState("");
+  const [googleApiKey,setGoogleApiKey] = useState(()=>localStorage.getItem("vg_google_api_key")||"");
+  const [googleClientId,setGoogleClientId] = useState(()=>localStorage.getItem("vg_google_client_id")||"");
   const [googleConfigStatus,setGoogleConfigStatus] = useState("Not configured");
   const [syncOpen,setSyncOpen] = useState(false);
   const [reviewOpen,setReviewOpen] = useState(false);
   const [toastMsg,setToastMsg] = useState("");
   const [clock,setClock]   = useState("");
+  const [sweepingId,setSweepingId] = useState(null);
+  const [isDesktop,setIsDesktop] = useState(()=>window.innerWidth>=1024);
+  const [sidebarCollapsed,setSidebarCollapsed] = useState(()=>localStorage.getItem("vg_sidebar_collapsed")==="1");
   const tRef = useRef(null);
 
   const toast = msg => { setToastMsg(msg); clearTimeout(tRef.current); tRef.current=setTimeout(()=>setToastMsg(""),2800); };
 
-  // Persist habits to localStorage + habits.json for WhatsApp notifications
+  // Detect desktop/mobile on resize
+  useEffect(()=>{
+    const h=()=>setIsDesktop(window.innerWidth>=1024);
+    window.addEventListener('resize',h);
+    return()=>window.removeEventListener('resize',h);
+  },[]);
+
+  // Daily reset at midnight — silently reset habits except monthly + perfect-week ones
+  useEffect(()=>{
+    const lastReset=localStorage.getItem('vg_last_reset')||'';
+    const todayStr=today();
+    if(lastReset===todayStr)return;
+    const weekDates=getWeekDates();
+    setHabits(h=>h.map(habit=>{
+      if(habit.monthly)return habit;
+      const scheduled=(habit.days||[]).filter(d=>d<7).length;
+      const done=(habit.completedDates||[]).filter(d=>weekDates.includes(d)).length;
+      if(scheduled>0&&done>=scheduled)return habit; // perfect week — keep gold outline
+      return{...habit,status:'pending'};
+    }));
+    localStorage.setItem('vg_last_reset',todayStr);
+  },[]);
+
+  // Persist habits to localStorage + habits.json + GitHub auto-push
   useEffect(()=>{
     try{ localStorage.setItem("vg_habits", JSON.stringify(habits)); }catch{}
     writeHabitsFile(habits);
+    pushHabitsToGitHub(habits);
   },[habits]);
+
+  async function pushHabitsToGitHub(habits){
+    try{
+      const token=localStorage.getItem("vg_github_token")||"";
+      if(!token)return;
+      const repo="DeVers-goat/morning-habits";
+      const path="habits.json";
+      const apiBase=`https://api.github.com/repos/${repo}/contents/${path}`;
+      const headers={"Authorization":`Bearer ${token}`,"Content-Type":"application/json","Accept":"application/vnd.github+json"};
+      // Get current SHA (needed to update file)
+      const getResp=await fetch(apiBase,{headers});
+      if(!getResp.ok)return;
+      const {sha}=await getResp.json();
+      const content=btoa(unescape(encodeURIComponent(JSON.stringify(habits,null,2))));
+      await fetch(apiBase,{method:"PUT",headers,body:JSON.stringify({message:"Auto-sync habits",content,sha})});
+    }catch{}
+  }
 
   function openHabitsDB(){return new Promise((res,rej)=>{const r=indexedDB.open("vg_handles",1);r.onupgradeneeded=e=>e.target.result.createObjectStore("h");r.onsuccess=e=>res(e.target.result);r.onerror=rej;});}
   async function writeHabitsFile(habits){
@@ -1613,8 +1852,14 @@ function App() {
     setHabits(h=>h.map(x=>{
       if(x.id!==id)return x;
       const nx={...x,status:cyc[x.status],completedDates:[...(x.completedDates||[])]};
-      if(nx.status==="complete"){nx.completedDates=[...new Set([...nx.completedDates,td])];toast(`✓ ${x.name}`);}
-      else if(x.status==="complete"){nx.completedDates=nx.completedDates.filter(d=>d!==td);}
+      if(nx.status==="complete"){
+        nx.completedDates=[...new Set([...nx.completedDates,td])];
+        toast(`✓ ${x.name}`);
+        setSweepingId(id);
+        setTimeout(()=>setSweepingId(s=>s===id?null:s),900);
+      } else if(x.status==="complete"){
+        nx.completedDates=nx.completedDates.filter(d=>d!==td);
+      }
       return nx;
     }));
   };
@@ -1629,26 +1874,31 @@ function App() {
 
   return (
     <div style={C.app}>
-      {/* Status bar */}
-      <div style={C.sb}>
-        <span style={{fontFamily:"var(--fm)",fontSize:12,color:"var(--t2)",letterSpacing:".04em"}}>{clock}</span>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:7,height:7,borderRadius:"50%",background:"var(--em)",boxShadow:"0 0 10px var(--em),0 0 22px rgba(45,212,160,.3)",animation:"breathe 3.2s ease-in-out infinite"}}/>
-          <span style={{fontFamily:"var(--fm)",fontSize:10,color:"var(--p)",letterSpacing:".22em",opacity:.65}}>VANGUARD</span>
+      {/* Desktop sidebar */}
+      {isDesktop&&<Sidebar screen={screen} navigate={navigate} habits={habits} goals={goals} onCollapseChange={setSidebarCollapsed}/>}
+
+      <div className={isDesktop?`desktop-content${sidebarCollapsed?" sidebar-collapsed":""}`:""}>
+        {/* Mobile status bar */}
+        <div className="mobile-status-bar" style={C.sb}>
+          <span style={{fontFamily:"var(--fm)",fontSize:12,color:"var(--t2)",letterSpacing:".04em"}}>{clock}</span>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:7,height:7,borderRadius:"50%",background:"var(--em)",boxShadow:"0 0 10px var(--em),0 0 22px rgba(45,212,160,.3)",animation:"breathe 3.2s ease-in-out infinite"}}/>
+            <span style={{fontFamily:"var(--fm)",fontSize:10,color:"var(--p)",letterSpacing:".22em",opacity:.65}}>VANGUARD</span>
+          </div>
+        </div>
+
+        {/* Screens */}
+        <div key={screen} className={transDir==='right'?'screen-enter-right':'screen-enter-left'}>
+          {screen==="home"    && <HomeScreen    habits={habits} goals={goals} onCycle={onCycle} onSync={()=>setSyncOpen(true)} sweepingId={sweepingId} isDesktop={isDesktop}/>}
+          {screen==="habits"  && <HabitsScreen  habits={habits} setHabits={setHabits} nHid={nHid} setNHid={setNHid} onSync={()=>setSyncOpen(true)} onSetupExport={setupHabitsExport} onReview={()=>setReviewOpen(true)} sweepingId={sweepingId} isDesktop={isDesktop}/>}
+          {screen==="goals"   && <GoalsScreen   goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} showToast={toast}/>}
+          {screen==="library" && <LibraryScreen books={books} setBooks={setBooks} nBid={nBid} setNBid={setNBid} toast={toast}/>}
+          {screen==="profile" && <ProfileScreen habits={habits} onSync={()=>setSyncOpen(true)} googleApiKey={googleApiKey} googleClientId={googleClientId} googleConfigStatus={googleConfigStatus} setGoogleApiKey={setGoogleApiKey} setGoogleClientId={setGoogleClientId} saveGoogleConfig={saveGoogleConfig} connectGoogle={connectGoogle} toast={toast}/>}
         </div>
       </div>
 
-      {/* Screens */}
-      <div key={screen} className={transDir==='right'?'screen-enter-right':'screen-enter-left'}>
-        {screen==="home"    && <HomeScreen    habits={habits} goals={goals} onCycle={onCycle} onSync={()=>setSyncOpen(true)}/>}
-        {screen==="habits"  && <HabitsScreen  habits={habits} setHabits={setHabits} nHid={nHid} setNHid={setNHid} onSync={()=>setSyncOpen(true)} onSetupExport={setupHabitsExport} onReview={()=>setReviewOpen(true)}/>}
-        {screen==="goals"   && <GoalsScreen   goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} showToast={toast}/>}
-        {screen==="library" && <LibraryScreen books={books} setBooks={setBooks} nBid={nBid} setNBid={setNBid} toast={toast}/>}
-        {screen==="profile" && <ProfileScreen habits={habits} onSync={()=>setSyncOpen(true)} googleApiKey={googleApiKey} googleClientId={googleClientId} googleConfigStatus={googleConfigStatus} setGoogleApiKey={setGoogleApiKey} setGoogleClientId={setGoogleClientId} saveGoogleConfig={saveGoogleConfig} connectGoogle={connectGoogle}/>}
-      </div>
-
-      {/* Nav */}
-      <nav style={C.nav}>
+      {/* Mobile bottom nav */}
+      <nav style={C.nav} className="mobile-nav">
         {NAV.map(({id,ni,nl})=>(
           <button key={id} onClick={()=>navigate(id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 16px",borderRadius:52,border:"none",cursor:"pointer",transition:"all .28s cubic-bezier(.22,1,.36,1)",...(screen===id?{background:"linear-gradient(145deg,rgba(124,110,248,.22),rgba(124,110,248,.1))",color:"var(--p)",boxShadow:"0 0 0 1px rgba(124,110,248,.32),0 4px 24px rgba(124,110,248,.22)",animation:"glowPulse 3s ease-in-out infinite"}:{background:"none",color:"rgba(120,115,160,.6)"})}}>
             <span style={{fontSize:15,lineHeight:1,transform:screen===id?"scale(1.22)":"scale(1)",transition:"transform .3s cubic-bezier(.34,1.56,.64,1)",filter:screen===id?"drop-shadow(0 0 8px rgba(124,110,248,.6))":"none"}}>{ni}</span>
