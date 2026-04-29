@@ -24,8 +24,9 @@ _st.textContent = `
   --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body,#root{height:100%;overscroll-behavior:none;}
-body{background:var(--canvas);color:var(--t4);font-family:var(--fb);max-width:430px;margin:0 auto;overflow-x:hidden;}
+html,body,#root{height:100%;overscroll-behavior:none;overflow-x:hidden;}
+body{background:var(--canvas);color:var(--t4);font-family:var(--fb);max-width:430px;margin:0 auto;overflow-x:hidden;width:100%;}
+*{max-width:100%;}
 input,button,textarea,select{font-family:inherit;outline:none;border:none;background:none;}
 textarea{resize:none;}::-webkit-scrollbar{width:0;}
 input[type=date]::-webkit-calendar-picker-indicator,
@@ -131,20 +132,34 @@ input:focus,textarea:focus{border-color:rgba(124,110,248,.5)!important;box-shado
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
 
 /* Habit completion sweep — progressive fill with shining edge */
-@keyframes habitFill{0%{width:0}100%{width:100%}}
-@keyframes habitEdge{0%{left:-18px;opacity:0}6%{opacity:1}92%{left:calc(100% - 18px);opacity:1}100%{left:calc(100% - 18px);opacity:0}}
-.habit-sweep-overlay{position:absolute;inset:0;pointer-events:none;z-index:9;border-radius:inherit;}
-.habit-sweep-fill{position:absolute;top:0;left:0;bottom:0;width:0;background:rgba(45,212,160,.16);animation:habitFill 1.4s cubic-bezier(.3,0,.2,1) forwards;}
-.habit-sweep-edge{position:absolute;top:-1px;bottom:-1px;left:-18px;width:36px;background:linear-gradient(90deg,transparent,rgba(80,255,170,.5) 30%,rgba(160,255,210,1) 50%,rgba(80,255,170,.5) 70%,transparent);filter:blur(2px);animation:habitEdge 1.4s cubic-bezier(.3,0,.2,1) forwards;}
+@keyframes habitSweep{
+  0%{width:0;opacity:0}
+  5%{opacity:1}
+  65%{width:100%;opacity:1}
+  75%{opacity:.75}
+  85%{opacity:.45}
+  93%{opacity:.18}
+  100%{width:100%;opacity:0}
+}
+.habit-sweep-overlay{
+  position:absolute;top:0;left:0;bottom:0;width:0;pointer-events:none;z-index:9;
+  background:linear-gradient(90deg,rgba(45,212,160,.13) 0%,rgba(45,212,160,.13) 82%,rgba(80,255,170,.5) 91%,rgba(160,255,205,.95) 96%,rgba(80,255,170,.5) 100%);
+  animation:habitSweep 1.5s cubic-bezier(.3,0,.2,1) forwards;
+}
 
 /* Gold sparkling outline for perfect-week habits */
-@keyframes goldSparkle{
-  0%,100%{box-shadow:0 0 0 1.5px rgba(228,184,74,.55),0 0 8px rgba(228,184,74,.25);}
-  25%{box-shadow:0 0 0 2px rgba(255,220,80,1),0 0 18px rgba(228,184,74,.55),0 0 32px rgba(228,184,74,.2);}
-  50%{box-shadow:0 0 0 1.5px rgba(228,184,74,.65),0 0 10px rgba(228,184,74,.3);}
-  75%{box-shadow:0 0 0 2px rgba(255,235,100,1),0 0 22px rgba(228,184,74,.6),0 0 38px rgba(228,184,74,.22);}
+@keyframes goldSweepAnim{
+  0%{left:-35%;opacity:0}
+  8%{opacity:1}
+  88%{opacity:1}
+  100%{left:115%;opacity:0}
 }
-.habit-gold{animation:goldSparkle 2.2s ease-in-out infinite;border-radius:4px;overflow:hidden;}
+@keyframes goldOutlinePulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(228,184,74,.16),0 0 6px rgba(228,184,74,.06);}
+  50%{box-shadow:0 0 0 1.5px rgba(228,184,74,.28),0 0 12px rgba(228,184,74,.1);}
+}
+.habit-gold{border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px rgba(228,184,74,.15);animation:goldOutlinePulse 6s ease-in-out 5s infinite;}
+.habit-gold-sweep{position:absolute;top:0;bottom:0;width:28%;background:linear-gradient(90deg,transparent,rgba(228,184,74,.18) 30%,rgba(255,220,80,.55) 50%,rgba(255,235,100,.7) 58%,rgba(255,220,80,.55) 68%,rgba(228,184,74,.18) 82%,transparent);filter:blur(4px);animation:goldSweepAnim 5s ease-in-out 1 forwards;pointer-events:none;z-index:10;}
 
 /* Desktop layout */
 @media(min-width:1024px){
@@ -547,7 +562,9 @@ function HabitRow({h,idx,editMode,onCycle,onRename,onToggleNN,onToggleBad,onTogg
     <div style={{display:"flex",alignItems:"center",gap:13,padding:"14px 22px",background:rowBg,borderBottom:"1px solid rgba(255,255,255,.04)",position:"relative",animationDelay:`${idx*.03}s`,transition:"background .22s ease"}} className={`au${isPerfectWeek?" habit-gold":""}`}
       onMouseEnter={e=>e.currentTarget.style.background=rowHover}
       onMouseLeave={e=>e.currentTarget.style.background=rowBg}>
-      {sweeping&&<div className="habit-sweep-overlay"><div className="habit-sweep-fill"/><div className="habit-sweep-edge"/></div>}
+      {sweeping&&<div className="habit-sweep-overlay"/>}
+      {isPerfectWeek&&<div className="habit-gold-sweep"/>}
+      {isPerfectWeek&&!editMode&&<div style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontFamily:"var(--fm)",fontSize:10,letterSpacing:".18em",textTransform:"uppercase",color:"rgba(228,184,74,.55)",pointerEvents:"none",zIndex:8,whiteSpace:"nowrap",textShadow:"0 0 12px rgba(228,184,74,.3)"}}>✦ Done for the week</div>}
       <div style={{position:"absolute",left:0,top:8,bottom:8,width:3,borderRadius:"0 3px 3px 0",background:barBg,boxShadow:barShadow,transition:"all .3s ease"}}/>
       {editMode?<div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -1560,8 +1577,8 @@ const ALLOWED_CLIENT_ID = "980450679027-bffme0pdvmqqi0v6tt4vjaf4gtpcqg0t.apps.go
 
 function LoginScreen({onAuth}) {
   const [error,setError] = useState("");
-  const [clientId,setClientId] = useState(()=>localStorage.getItem("vg_google_client_id")||"");
-  const [saved,setSaved] = useState(!!localStorage.getItem("vg_google_client_id"));
+  const [clientId,setClientId] = useState("");
+  const [saved,setSaved] = useState(()=>localStorage.getItem("vg_google_client_id")===ALLOWED_CLIENT_ID);
   const btnRef = useRef(null);
 
   useEffect(()=>{
