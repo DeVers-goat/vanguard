@@ -155,10 +155,10 @@ input:focus,textarea:focus{border-color:rgba(124,110,248,.5)!important;box-shado
   100%{left:115%;opacity:0}
 }
 @keyframes goldOutlinePulse{
-  0%,100%{box-shadow:0 0 0 1px rgba(228,184,74,.16),0 0 6px rgba(228,184,74,.06);}
-  50%{box-shadow:0 0 0 1.5px rgba(228,184,74,.28),0 0 12px rgba(228,184,74,.1);}
+  0%,100%{box-shadow:0 0 0 1.5px rgba(228,184,74,.28),0 0 6px rgba(228,184,74,.1);}
+  50%{box-shadow:0 0 0 2px rgba(255,220,80,.65),0 0 12px rgba(228,184,74,.28),0 0 24px rgba(228,184,74,.1);}
 }
-.habit-gold{border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px rgba(228,184,74,.15);animation:goldOutlinePulse 6s ease-in-out 5s infinite;}
+.habit-gold{border-radius:4px;overflow:hidden;box-shadow:0 0 0 1.5px rgba(228,184,74,.28),0 0 6px rgba(228,184,74,.1);animation:goldOutlinePulse 6s ease-in-out 5s infinite;}
 .habit-gold-sweep{position:absolute;top:0;bottom:0;width:28%;background:linear-gradient(90deg,transparent,rgba(228,184,74,.18) 30%,rgba(255,220,80,.55) 50%,rgba(255,235,100,.7) 58%,rgba(255,220,80,.55) 68%,rgba(228,184,74,.18) 82%,transparent);filter:blur(4px);animation:goldSweepAnim 5s ease-in-out 1 forwards;pointer-events:none;z-index:10;}
 
 /* Desktop layout */
