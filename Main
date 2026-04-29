@@ -1769,6 +1769,25 @@ function App() {
     localStorage.setItem('vg_last_reset',todayStr);
   },[]);
 
+  // Load habits from GitHub on mount (source of truth for cross-device sync)
+  useEffect(()=>{
+    const load=async()=>{
+      try{
+        const resp=await fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/habits.json?_=${Date.now()}`);
+        if(!resp.ok)return;
+        const remote=await resp.json();
+        if(!Array.isArray(remote)||remote.length===0)return;
+        const migrated=remote.map(h=>{
+          const def=INIT_HABITS.find(x=>x.id===h.id);
+          return{...h,name:def?.name??h.name,isNN:def?.isNN??h.isNN,isBad:def?.isBad??h.isBad??false,days:h.days??def?.days??[],monthly:h.monthly??def?.monthly??false,completedDates:h.completedDates??[],duration:h.duration??def?.duration??0};
+        });
+        setHabits(migrated);
+        try{localStorage.setItem("vg_habits",JSON.stringify(migrated));}catch{}
+      }catch{}
+    };
+    load();
+  },[]);
+
   // Persist habits to localStorage + habits.json + GitHub auto-push
   useEffect(()=>{
     try{ localStorage.setItem("vg_habits", JSON.stringify(habits)); }catch{}
