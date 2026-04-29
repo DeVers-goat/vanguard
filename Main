@@ -23,7 +23,7 @@ _st.textContent = `
   --fd:'Oxanium',sans-serif; --fm:'JetBrains Mono',monospace; --fb:'Plus Jakarta Sans',sans-serif;
   --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 html,body,#root{height:100%;overscroll-behavior:none;overflow-x:hidden;}
 body{background:var(--canvas);color:var(--t4);font-family:var(--fb);max-width:430px;margin:0 auto;overflow-x:hidden;width:100%;}
 *{max-width:100%;}
