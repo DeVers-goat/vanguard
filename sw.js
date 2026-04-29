@@ -1,8 +1,8 @@
-const CACHE = 'vanguard-v1';
+const CACHE = 'vanguard-v3';
 const FILES = [
   './',
   'index.html',
-  'Main.js',
+  'Main',
   'manifest.json',
   'icons/icon-192.png',
   'icons/icon-512.png',
