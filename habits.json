@@ -4,7 +4,7 @@
     "name": "8000 steps",
     "time": "06:00",
     "isNN": true,
-    "status": "pending",
+    "status": "complete",
     "days": [
       0,
       1,
@@ -14,7 +14,9 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-04-29"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -92,7 +94,7 @@
   {
     "id": 6,
     "name": "Physiotherapy",
-    "time": "13:00",
+    "time": "08:00",
     "isNN": false,
     "status": "pending",
     "days": [
@@ -125,7 +127,7 @@
   {
     "id": 8,
     "name": "Recovery run",
-    "time": "22:00",
+    "time": "09:00",
     "isNN": false,
     "status": "pending",
     "days": [
@@ -157,7 +159,7 @@
   {
     "id": 10,
     "name": "Working on code",
-    "time": "15:00",
+    "time": "14:00",
     "isNN": false,
     "status": "pending",
     "days": [
@@ -172,7 +174,7 @@
   {
     "id": 11,
     "name": "Improving communication skill",
-    "time": "17:00",
+    "time": "15:00",
     "isNN": false,
     "status": "pending",
     "days": [
@@ -288,7 +290,7 @@
   {
     "id": 18,
     "name": "Grooming",
-    "time": "08:15",
+    "time": "21:15",
     "isNN": false,
     "status": "pending",
     "days": [
