@@ -1577,8 +1577,8 @@ const ALLOWED_CLIENT_ID = "980450679027-bffme0pdvmqqi0v6tt4vjaf4gtpcqg0t.apps.go
 
 function LoginScreen({onAuth}) {
   const [error,setError] = useState("");
-  const [clientId,setClientId] = useState("");
   const [saved,setSaved] = useState(()=>localStorage.getItem("vg_google_client_id")===ALLOWED_CLIENT_ID);
+  const [clientId,setClientId] = useState(()=>localStorage.getItem("vg_google_client_id")===ALLOWED_CLIENT_ID?ALLOWED_CLIENT_ID:"");
   const btnRef = useRef(null);
 
   useEffect(()=>{
