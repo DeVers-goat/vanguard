@@ -1299,8 +1299,11 @@ function FilledField({label,storageKey,placeholder,onSave,type="text",hint}) {
   const [stored,setStored]=useState(!!localStorage.getItem(storageKey));
   const save=()=>{
     if(!val.trim())return;
-    localStorage.setItem(storageKey,val.trim());
-    if(onSave)onSave(val.trim());
+    const v=val.trim();
+    localStorage.setItem(storageKey,v);
+    // Also persist to IndexedDB for iOS resilience
+    try{const r=indexedDB.open("vg_kv",1);r.onupgradeneeded=e=>e.target.result.createObjectStore("kv");r.onsuccess=e=>{const tx=e.target.result.transaction("kv","readwrite");tx.objectStore("kv").put(v,storageKey);};}catch{}
+    if(onSave)onSave(v);
     setEditing(false);setVal("");setStored(true);
   };
   return (
@@ -1837,9 +1840,22 @@ function App() {
     return()=>clearInterval(id);
   },[]);
 
+  async function getGitHubToken(){
+    const ls=localStorage.getItem("vg_github_token")||"";
+    if(ls)return ls;
+    try{
+      return await new Promise((res,rej)=>{
+        const r=indexedDB.open("vg_kv",1);
+        r.onupgradeneeded=e=>e.target.result.createObjectStore("kv");
+        r.onsuccess=e=>{const g=e.target.result.transaction("kv","readonly").objectStore("kv").get("vg_github_token");g.onsuccess=()=>{const v=g.result||"";if(v)localStorage.setItem("vg_github_token",v);res(v);};g.onerror=()=>res("");};
+        r.onerror=()=>res("");
+      });
+    }catch{return "";}
+  }
+
   async function pushHabitsToGitHub(habits){
     try{
-      const token=localStorage.getItem("vg_github_token")||"";
+      const token=await getGitHubToken();
       if(!token)return;
       const repo="DeVers-goat/morning-habits";
       const path="habits.json";
