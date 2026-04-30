@@ -1,0 +1,19 @@
+name: Evening Habit Reminder
+
+on:
+  schedule:
+    - cron: '0 18 * * *'   # 9:00 PM Israel time (UTC+3)
+  workflow_dispatch:
+
+jobs:
+  send-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send evening WhatsApp reminder
+        env:
+          TWILIO_SID:   ${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
+        run: python3 evening_reminder.py
