@@ -1748,6 +1748,8 @@ function App() {
   const [isDesktop,setIsDesktop] = useState(()=>window.innerWidth>=1024);
   const [sidebarCollapsed,setSidebarCollapsed] = useState(()=>localStorage.getItem("vg_sidebar_collapsed")==="1");
   const tRef = useRef(null);
+  const receivingRemote = useRef(false);
+  const lastRemoteHash = useRef("");
 
   const toast = msg => { setToastMsg(msg); clearTimeout(tRef.current); tRef.current=setTimeout(()=>setToastMsg(""),2800); };
 
@@ -1803,13 +1805,37 @@ function App() {
     init();
   },[]);
 
-  // Persist habits to localStorage + habits.json + GitHub auto-push (skip during initial load)
+  // Persist habits to localStorage + habits.json + GitHub auto-push (skip during initial load or remote update)
   useEffect(()=>{
-    if(!initialLoadDone.current)return;
+    if(!initialLoadDone.current||receivingRemote.current)return;
     try{ localStorage.setItem("vg_habits", JSON.stringify(habits)); }catch{}
     writeHabitsFile(habits);
     pushHabitsToGitHub(habits);
   },[habits]);
+
+  // Poll GitHub every 30s to pick up changes from other devices
+  useEffect(()=>{
+    const migrateH=h=>{const def=INIT_HABITS.find(x=>x.id===h.id);return{...h,name:def?.name??h.name,isNN:def?.isNN??h.isNN,isBad:def?.isBad??h.isBad??false,days:h.days??def?.days??[],monthly:h.monthly??def?.monthly??false,completedDates:h.completedDates??[],duration:h.duration??def?.duration??0};};
+    const poll=async()=>{
+      if(!initialLoadDone.current)return;
+      try{
+        const resp=await fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/habits.json?_=${Date.now()}`);
+        if(!resp.ok)return;
+        const remote=await resp.json();
+        if(!Array.isArray(remote)||remote.length===0)return;
+        const hash=remote.map(h=>`${h.id}:${h.status}:${(h.completedDates||[]).join(',')}`).join('|');
+        if(hash===lastRemoteHash.current)return;
+        lastRemoteHash.current=hash;
+        const migrated=remote.map(migrateH);
+        receivingRemote.current=true;
+        setHabits(migrated);
+        try{localStorage.setItem("vg_habits",JSON.stringify(migrated));}catch{}
+        setTimeout(()=>{receivingRemote.current=false;},500);
+      }catch{}
+    };
+    const id=setInterval(poll,30000);
+    return()=>clearInterval(id);
+  },[]);
 
   async function pushHabitsToGitHub(habits){
     try{
