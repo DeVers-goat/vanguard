@@ -1582,26 +1582,31 @@ function LoginScreen({onAuth}) {
   const btnRef = useRef(null);
 
   useEffect(()=>{
-    if(!saved||!clientId||!window.google)return;
-    try{
-      window.google.accounts.id.initialize({
-        client_id:clientId,
-        callback:(resp)=>{
-          try{
-            const payload=JSON.parse(atob(resp.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-            if(payload.email===ALLOWED_EMAIL){
-              localStorage.setItem("vg_auth",JSON.stringify({email:payload.email,name:payload.name,picture:payload.picture,exp:payload.exp}));
-              onAuth();
-            }else{
-              setError("Access denied. This app is private.");
-            }
-          }catch{setError("Sign-in failed. Try again.");}
+    if(!saved||!clientId)return;
+    let attempts=0;
+    const init=()=>{
+      if(!window.google){if(++attempts<60){setTimeout(init,100);}return;}
+      try{
+        window.google.accounts.id.initialize({
+          client_id:clientId,
+          callback:(resp)=>{
+            try{
+              const payload=JSON.parse(atob(resp.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+              if(payload.email===ALLOWED_EMAIL){
+                localStorage.setItem("vg_auth",JSON.stringify({email:payload.email,name:payload.name,picture:payload.picture,exp:payload.exp}));
+                onAuth();
+              }else{
+                setError("Access denied. This app is private.");
+              }
+            }catch{setError("Sign-in failed. Try again.");}
+          }
+        });
+        if(btnRef.current){
+          window.google.accounts.id.renderButton(btnRef.current,{theme:"filled_black",size:"large",shape:"pill",width:280});
         }
-      });
-      if(btnRef.current){
-        window.google.accounts.id.renderButton(btnRef.current,{theme:"filled_black",size:"large",shape:"pill",width:280});
-      }
-    }catch(e){setError("Google Sign-In failed to load.");}
+      }catch(e){setError("Google Sign-In failed to load.");}
+    };
+    init();
   },[saved,clientId]);
 
   return (
