@@ -1422,7 +1422,7 @@ function FilledField({label,storageKey,placeholder,onSave,type="text",hint}) {
   );
 }
 
-function ProfileScreen({habits,onSync,googleApiKey,googleClientId,googleConfigStatus,setGoogleApiKey,setGoogleClientId,saveGoogleConfig,connectGoogle,toast}) {
+function ProfileScreen({habits,onSync,googleApiKey,googleClientId,googleConfigStatus,setGoogleApiKey,setGoogleClientId,saveGoogleConfig,connectGoogle,toast,onTokenSaved}) {
   const done=habits.filter(h=>h.status==="complete").length,tot=habits.length,pct=tot?Math.round(done/tot*100):0;
   const nn=habits.filter(h=>h.isNN);
   const [w,setW]=useState(0);
@@ -1444,7 +1444,7 @@ function ProfileScreen({habits,onSync,googleApiKey,googleClientId,googleConfigSt
       <div style={{margin:"0 22px 18px"}}>
         <Lbl style={{fontSize:7,marginBottom:12}}>GitHub Auto-Sync</Lbl>
         <div style={{background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,padding:18}}>
-          <FilledField label="Personal Access Token" storageKey="vg_github_token" placeholder="Paste your GitHub token" type="password" hint="Habits auto-push to GitHub on every check-off. Needs repo scope." onSave={()=>toast("✓ GitHub token saved")}/>
+          <FilledField label="Personal Access Token" storageKey="vg_github_token" placeholder="Paste your GitHub token" type="password" hint="Habits auto-push to GitHub on every check-off. Needs repo scope." onSave={()=>{toast("✓ GitHub token saved");if(onTokenSaved)onTokenSaved();}}/>
         </div>
       </div>
       <div style={{margin:"0 22px 18px",padding:"22px 22px 20px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,position:"relative",overflow:"hidden"}}>
@@ -2091,7 +2091,7 @@ function App() {
           {screen==="habits"  && <HabitsScreen  habits={habits} setHabits={setHabits} nHid={nHid} setNHid={setNHid} onSync={()=>setSyncOpen(true)} onSetupExport={setupHabitsExport} onReview={()=>setReviewOpen(true)} sweepingId={sweepingId} isDesktop={isDesktop}/>}
           {screen==="goals"   && <GoalsScreen   goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} showToast={toast} habits={habits}/>}
           {screen==="library" && <LibraryScreen books={books} setBooks={setBooks} nBid={nBid} setNBid={setNBid} toast={toast}/>}
-          {screen==="profile" && <ProfileScreen habits={habits} onSync={()=>setSyncOpen(true)} googleApiKey={googleApiKey} googleClientId={googleClientId} googleConfigStatus={googleConfigStatus} setGoogleApiKey={setGoogleApiKey} setGoogleClientId={setGoogleClientId} saveGoogleConfig={saveGoogleConfig} connectGoogle={connectGoogle} toast={toast}/>}
+          {screen==="profile" && <ProfileScreen habits={habits} onSync={()=>setSyncOpen(true)} googleApiKey={googleApiKey} googleClientId={googleClientId} googleConfigStatus={googleConfigStatus} setGoogleApiKey={setGoogleApiKey} setGoogleClientId={setGoogleClientId} saveGoogleConfig={saveGoogleConfig} connectGoogle={connectGoogle} toast={toast} onTokenSaved={()=>pushHabitsToGitHub(habits)}/>}
         </div>
       </div>
 
