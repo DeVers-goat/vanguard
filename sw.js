@@ -1,4 +1,4 @@
-const CACHE = 'vanguard-v3';
+const CACHE = 'vanguard-v4';
 const FILES = [
   './',
   'index.html',
