@@ -15,7 +15,7 @@
       6
     ],
     "completedDates": [
-      "2026-04-29"
+      "2026-05-01"
     ],
     "duration": 0,
     "isBad": false,
@@ -31,7 +31,9 @@
       1,
       4
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-04-30"
+    ],
     "duration": 20,
     "isBad": false,
     "monthly": false
@@ -41,7 +43,7 @@
     "name": "Morning supplements",
     "time": "07:00",
     "isNN": true,
-    "status": "pending",
+    "status": "complete",
     "days": [
       0,
       1,
@@ -51,7 +53,11 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-04-29",
+      "2026-04-30",
+      "2026-05-01"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -71,7 +77,10 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-04-29",
+      "2026-04-30"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -113,7 +122,7 @@
     "name": "Strength training",
     "time": "09:00",
     "isNN": false,
-    "status": "pending",
+    "status": "failed",
     "days": [
       1,
       5,
@@ -190,7 +199,7 @@
     "name": "Chess",
     "time": "16:00",
     "isNN": true,
-    "status": "pending",
+    "status": "complete",
     "days": [
       0,
       1,
@@ -200,7 +209,10 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-04-29",
+      "2026-05-01"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -238,11 +250,13 @@
     "name": "Planning Meal prep",
     "time": "19:00",
     "isNN": false,
-    "status": "pending",
+    "status": "complete",
     "days": [
       3
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-05-01"
+    ],
     "duration": 60,
     "isBad": false,
     "monthly": false
@@ -262,7 +276,10 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-04-29",
+      "2026-04-30"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -312,7 +329,9 @@
       1,
       4
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-04-30"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
