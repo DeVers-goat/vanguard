@@ -4,7 +4,7 @@
     "name": "8000 steps",
     "time": "06:00",
     "isNN": true,
-    "status": "complete",
+    "status": "failed",
     "days": [
       0,
       1,
@@ -14,10 +14,7 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-04-28",
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -32,9 +29,7 @@
       1,
       4
     ],
-    "completedDates": [
-      "2026-04-28"
-    ],
+    "completedDates": [],
     "duration": 20,
     "isBad": false,
     "monthly": false
@@ -55,9 +50,6 @@
       6
     ],
     "completedDates": [
-      "2026-04-28",
-      "2026-04-29",
-      "2026-04-30",
       "2026-05-01"
     ],
     "duration": 0,
@@ -69,7 +61,7 @@
     "name": "Brushing teeth",
     "time": "07:15",
     "isNN": true,
-    "status": "pending",
+    "status": "complete",
     "days": [
       0,
       1,
@@ -80,9 +72,7 @@
       6
     ],
     "completedDates": [
-      "2026-04-28",
-      "2026-04-29",
-      "2026-04-30"
+      "2026-05-01"
     ],
     "duration": 0,
     "isBad": false,
@@ -108,17 +98,14 @@
     "name": "Physiotherapy",
     "time": "08:00",
     "isNN": false,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       2,
       3,
       5
     ],
-    "completedDates": [
-      "2026-04-28",
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 25,
     "isBad": false,
     "monthly": false
@@ -128,15 +115,13 @@
     "name": "Strength training",
     "time": "09:00",
     "isNN": false,
-    "status": "complete",
+    "status": "pending",
     "days": [
       1,
       5,
       6
     ],
-    "completedDates": [
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 90,
     "isBad": false,
     "monthly": false
@@ -151,9 +136,7 @@
       2,
       4
     ],
-    "completedDates": [
-      "2026-04-28"
-    ],
+    "completedDates": [],
     "duration": 30,
     "isBad": false,
     "monthly": false
@@ -170,9 +153,7 @@
       3,
       4
     ],
-    "completedDates": [
-      "2026-04-28"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -187,9 +168,7 @@
       2,
       4
     ],
-    "completedDates": [
-      "2026-04-28"
-    ],
+    "completedDates": [],
     "duration": 120,
     "isBad": false,
     "monthly": false
@@ -213,7 +192,7 @@
     "name": "Chess",
     "time": "16:00",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -223,12 +202,7 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-04-28",
-      "2026-04-29",
-      "2026-04-30",
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -280,7 +254,7 @@
     "name": "Organize Bed",
     "time": "20:00",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -290,11 +264,7 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-04-29",
-      "2026-04-30",
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -304,7 +274,7 @@
     "name": "Evening magnesium",
     "time": "21:00",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -314,11 +284,7 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-04-28",
-      "2026-04-29",
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -333,9 +299,7 @@
       0,
       2
     ],
-    "completedDates": [
-      "2026-04-28"
-    ],
+    "completedDates": [],
     "duration": 15,
     "isBad": false,
     "monthly": false
@@ -350,9 +314,7 @@
       1,
       4
     ],
-    "completedDates": [
-      "2026-04-30"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -373,9 +335,7 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-04-28"
-    ],
+    "completedDates": [],
     "duration": 0,
     "monthly": false
   },
@@ -384,13 +344,11 @@
     "name": "Organize Shekem",
     "time": "17:00",
     "isNN": false,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0
     ],
-    "completedDates": [
-      "2026-04-28"
-    ],
+    "completedDates": [],
     "duration": 210,
     "isBad": false,
     "monthly": false
