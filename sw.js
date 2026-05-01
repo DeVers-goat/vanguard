@@ -1,4 +1,4 @@
-const CACHE = 'vanguard-v4';
+const CACHE = 'vanguard-v5';
 const FILES = [
   './',
   'index.html',
@@ -29,6 +29,11 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Skip caching on localhost — always fetch fresh
+  if(e.request.url.includes('localhost') || e.request.url.includes('127.0.0.1')){
+    e.respondWith(fetch(e.request));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
       if(resp && resp.status === 200 && e.request.method === 'GET'){

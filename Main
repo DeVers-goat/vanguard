@@ -166,7 +166,7 @@ input:focus,textarea:focus{border-color:rgba(124,110,248,.5)!important;box-shado
 /* Desktop layout */
 @media(min-width:1024px){
   body{max-width:none!important;margin:0!important;}
-  .desktop-content{margin-left:260px;transition:margin-left .25s cubic-bezier(.22,1,.36,1);}
+  .desktop-content{margin-left:260px;transition:margin-left .25s cubic-bezier(.22,1,.36,1);zoom:1.18;}
   .desktop-content.sidebar-collapsed{margin-left:52px;}
   .desktop-sidebar{display:flex!important;}
   .mobile-nav{display:none!important;}
@@ -1747,7 +1747,7 @@ function AppRoot() {
 /* ════════════════════════════════════════════════════
    SIDEBAR (desktop only)
 ════════════════════════════════════════════════════ */
-function Sidebar({screen,navigate,habits,goals,onCollapseChange}) {
+function Sidebar({screen,navigate,habits,goals,onCollapseChange,syncStatus,lastSynced}) {
   const [collapsed,setCollapsed]=useState(()=>localStorage.getItem("vg_sidebar_collapsed")==="1");
   const toggle=()=>{const n=!collapsed;setCollapsed(n);localStorage.setItem("vg_sidebar_collapsed",n?"1":"0");if(onCollapseChange)onCollapseChange(n);};
   const todayDow=new Date().getDay();
@@ -1765,7 +1765,12 @@ function Sidebar({screen,navigate,habits,goals,onCollapseChange}) {
       <div style={{padding:"24px 12px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",minWidth:0,borderBottom:"1px solid rgba(255,255,255,.05)"}}>
         {!collapsed&&<div style={{minWidth:0}}>
           <div style={{fontFamily:"var(--fd)",fontSize:15,fontWeight:800,letterSpacing:".08em",background:"linear-gradient(135deg,#818cf8,#67e8f9)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",whiteSpace:"nowrap"}}>THE VANGUARD</div>
-          <div style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".2em",textTransform:"uppercase",marginTop:3}}>Personal OS</div>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3}}>
+            <div style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".2em",textTransform:"uppercase"}}>Personal OS</div>
+            {syncStatus==="syncing"&&<span style={{fontFamily:"var(--fm)",fontSize:6.5,color:"var(--t1)",letterSpacing:".08em",animation:"breathe 1s ease-in-out infinite"}}>· SYNCING</span>}
+            {syncStatus==="synced"&&lastSynced&&<span style={{fontFamily:"var(--fm)",fontSize:6.5,color:"var(--em)",letterSpacing:".08em"}}>· ✓ {lastSynced.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>}
+            {syncStatus==="error"&&<span style={{fontFamily:"var(--fm)",fontSize:6.5,color:"var(--ro)",letterSpacing:".08em"}}>· {localStorage.getItem("vg_github_token")?"SYNC ERR":"NO TOKEN"}</span>}
+          </div>
         </div>}
         <button onClick={toggle} style={{width:28,height:28,borderRadius:8,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",color:"var(--t2)",fontSize:12,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",marginLeft:collapsed?0:"auto",transition:"all .2s ease"}}>
           {collapsed?"›":"‹"}
@@ -1783,7 +1788,15 @@ function Sidebar({screen,navigate,habits,goals,onCollapseChange}) {
       </div>
       {/* Today's progress — hidden when collapsed */}
       {!collapsed&&<div style={{margin:"0 8px 12px",padding:"13px 14px",background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.05)",borderRadius:14}}>
-        <div style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase",marginBottom:10}}>Today</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase"}}>Today</div>
+          <div style={{fontFamily:"var(--fm)",fontSize:6.5,letterSpacing:".08em"}}>
+            {syncStatus==="syncing"&&<span style={{color:"var(--t1)",animation:"breathe 1s ease-in-out infinite"}}>⟳ syncing</span>}
+            {syncStatus==="synced"&&lastSynced&&<span style={{color:"var(--em)"}}>✓ {lastSynced.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>}
+            {syncStatus==="error"&&<span style={{color:"var(--ro)"}}>{localStorage.getItem("vg_github_token")?"⚠ error":"⚠ no token"}</span>}
+            {syncStatus==="idle"&&<span style={{color:"var(--t0)"}}>◌ idle</span>}
+          </div>
+        </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
           <span style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)"}}>Non-Neg</span>
           <span style={{fontFamily:"var(--fd)",fontSize:14,fontWeight:800,color:"var(--em)"}}>{nnDone}/{nn.length}</span>
@@ -2070,7 +2083,7 @@ function App() {
   return (
     <div style={C.app}>
       {/* Desktop sidebar */}
-      {isDesktop&&<Sidebar screen={screen} navigate={navigate} habits={habits} goals={goals} onCollapseChange={setSidebarCollapsed}/>}
+      {isDesktop&&<Sidebar screen={screen} navigate={navigate} habits={habits} goals={goals} onCollapseChange={setSidebarCollapsed} syncStatus={syncStatus} lastSynced={lastSynced}/>}
 
       <div className={isDesktop?`desktop-content${sidebarCollapsed?" sidebar-collapsed":""}`:""}>
         {/* Mobile status bar */}
