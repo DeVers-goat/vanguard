@@ -44,6 +44,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes nodePulse{0%,100%{opacity:1}50%{opacity:.25}}
 @keyframes orbitRing{0%,100%{r:19;opacity:.5}50%{r:27;opacity:0}}
+@keyframes starTwinkle{0%,100%{opacity:.12}50%{opacity:.65}}
+@keyframes cosmicOrbit{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 @keyframes stepIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @keyframes glowPulse{0%,100%{box-shadow:0 0 0 1px rgba(124,110,248,.18),0 4px 24px rgba(0,0,0,.5)}50%{box-shadow:0 0 0 1px rgba(124,110,248,.36),0 4px 32px rgba(124,110,248,.18)}}
@@ -400,50 +402,98 @@ function drawNetwork(svg,goals,habits,sel,onGoal,onMonth){
   else{const g=goals.find(x=>x.id===sel);if(g)drawExpanded(svg,g,goals,onGoal,onMonth);}
 }
 function drawOverview(svg,goals,habits,onGoal){
-  [50,40].forEach((r,i)=>{const c=svgE("circle",{cx:CX,cy:CY,r,fill:"none",stroke:"rgba(124,110,248,.1)","stroke-width":i===0?".7":"1.1"});if(i===0)c.style.animation="nodePulse 4s ease-in-out infinite";svg.appendChild(c);});
-  if(goals.length>=3)goals.forEach((g,i)=>{const p1=goalPos(i,goals.length),p2=goalPos((i+1)%goals.length,goals.length);svg.appendChild(svgE("line",{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:"rgba(100,90,220,.18)","stroke-width":".5","stroke-dasharray":"3 13"}));});
-  goals.forEach((g,i)=>{const p=goalPos(i,goals.length),col=GC[g.color].hex;const mx=(CX+p.x)/2,my=(CY+p.y)/2;const path=svgE("path",{d:`M ${CX} ${CY} Q ${mx+(p.y-CY)*.09} ${my-(p.x-CX)*.09} ${p.x} ${p.y}`,stroke:col,"stroke-width":".85",fill:"none",opacity:".32","stroke-dasharray":"4 8"});path.classList.add("de");svg.appendChild(path);});
-  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:30,fill:"rgba(10,10,22,.94)",stroke:"rgba(124,110,248,.3)","stroke-width":"1.5",filter:"url(#gf-hub)"}));
-  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:22,fill:"none",stroke:"rgba(124,110,248,.12)","stroke-width":"1"}));
-  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:14,fill:"rgba(255,255,255,.04)",stroke:"rgba(255,255,255,.1)","stroke-width":"1"}));
-  svgT(svg,CX,CY-4,new Date().getFullYear(),{fill:"rgba(200,195,255,.8)","font-family":"'Oxanium',sans-serif","font-size":"13","font-weight":"700","letter-spacing":"2"});
-  const tG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.text).length,0);
-  const dG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,0);
-  svgT(svg,CX,CY+12,`${dG}/${tG||0}`,{fill:"rgba(124,110,248,.5)","font-family":"'JetBrains Mono',monospace","font-size":"8"});
+  // ── STAR FIELD ─────────────────────────────────────
+  for(let i=0;i<60;i++){
+    const x=(i*137.508+41)%390, y=(i*89.314+27)%630;
+    const r=i%9===0?1.2:i%4===0?0.7:0.35;
+    const o=0.1+(i%6)*0.07;
+    const s=svgE("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r,fill:"#fff",opacity:o});
+    if(i%7===0)s.style.animation=`starTwinkle ${2.5+(i%4)*.6}s ease-in-out ${(i%5)*.45}s infinite`;
+    svg.appendChild(s);
+  }
+  // ── NEBULA GLOWS at goal positions ─────────────────
   goals.forEach((g,i)=>{
     const p=goalPos(i,goals.length),c=GC[g.color];
-    const done=Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,tot=Object.values(g.monthlyGoals).filter(m=>m.text).length;
-    const pct=tot?Math.round(done/tot*100):0,R=21;
+    svg.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:82,fill:`${c.hex}06`,stroke:"none"}));
+    svg.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:48,fill:`${c.hex}0d`,stroke:"none"}));
+  });
+  // ── FLOWING CONNECTIONS ────────────────────────────
+  goals.forEach((g,i)=>{
+    const p=goalPos(i,goals.length),c=GC[g.color];
+    const mx=(CX+p.x)/2+(p.y-CY)*.1, my=(CY+p.y)/2-(p.x-CX)*.1;
+    svg.appendChild(svgE("path",{d:`M ${CX} ${CY} Q ${mx} ${my} ${p.x} ${p.y}`,stroke:c.hex,"stroke-width":"2.8",fill:"none",opacity:".04"}));
+    const fp=svgE("path",{d:`M ${CX} ${CY} Q ${mx} ${my} ${p.x} ${p.y}`,stroke:c.hex,"stroke-width":"0.9",fill:"none",opacity:".38","stroke-dasharray":"5 9"});
+    fp.classList.add("de"); svg.appendChild(fp);
+  });
+  // ── COSMIC HUB ─────────────────────────────────────
+  [72,56,42].forEach((r,i)=>{
+    const ring=svgE("circle",{cx:CX,cy:CY,r,fill:"none",stroke:`rgba(124,110,248,${i===2?.2:.06})`,"stroke-width":i===2?".9":".5"});
+    if(i===0)ring.style.animation="nodePulse 7s ease-in-out infinite";
+    svg.appendChild(ring);
+  });
+  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:34,fill:"rgba(5,5,14,.98)",stroke:"rgba(124,110,248,.4)","stroke-width":"1.7",filter:"url(#gf-hub)"}));
+  svg.appendChild(svgE("circle",{cx:CX,cy:CY,r:26,fill:"rgba(124,110,248,.07)",stroke:"rgba(124,110,248,.1)","stroke-width":"0.7"}));
+  svgT(svg,CX,CY-7,"VANGUARD",{fill:"rgba(165,155,255,.52)","font-family":"'Oxanium',sans-serif","font-size":"6","font-weight":"800","letter-spacing":"1.8"});
+  const tG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.text).length,0);
+  const dG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,0);
+  svgT(svg,CX,CY+5,`${dG}/${tG||0}`,{fill:"rgba(124,110,248,.78)","font-family":"'JetBrains Mono',monospace","font-size":"10","font-weight":"600"});
+  svgT(svg,CX,CY+17,new Date().getFullYear().toString(),{fill:"rgba(124,110,248,.3)","font-family":"'JetBrains Mono',monospace","font-size":"6.5"});
+  // ── GOAL ORBS ──────────────────────────────────────
+  goals.forEach((g,i)=>{
+    const p=goalPos(i,goals.length),c=GC[g.color];
+    const done=Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length;
+    const tot=Object.values(g.monthlyGoals).filter(m=>m.text).length;
+    const pct=tot?Math.round(done/tot*100):0, R=27;
+    const ang=Math.atan2(p.y-CY,p.x-CX);
     const grp=svgE("g");grp.style.cursor="pointer";grp.addEventListener("click",()=>onGoal(g.id));
-    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R+7,fill:"none",stroke:c.hex,"stroke-width":".5",opacity:".16"}));
-    if(pct>0){const ci=2*Math.PI*(R+4);grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R+4,fill:"none",stroke:c.hex,"stroke-width":"1.2","stroke-dasharray":`${ci*pct/100} ${ci}`,"stroke-dashoffset":ci*.25,"stroke-linecap":"round",opacity:".55"}));}
-    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R,fill:"rgba(9,9,20,.94)",stroke:c.hex,"stroke-width":"1.4",filter:`url(#${c.gf})`}));
-    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R*.62,fill:`${c.hex}18`,stroke:"none"}));
-    grp.appendChild(svgE("circle",{cx:p.x-R*.2,cy:p.y-R*.2,r:R*.22,fill:"rgba(255,255,255,.07)",stroke:"none"}));
-    const ang=Math.atan2(p.y-CY,p.x-CX),lx=p.x+Math.cos(ang)*(R+21),ly=p.y+Math.sin(ang)*(R+21);
+    // Animated outer halo
+    const halo=svgE("circle",{cx:p.x,cy:p.y,r:R+18,fill:`${c.hex}07`,stroke:c.hex,"stroke-width":"0.5",opacity:"0.2"});
+    halo.style.animation=`nodePulse ${3.5+i*.45}s ease-in-out ${i*.3}s infinite`;
+    grp.appendChild(halo);
+    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R+9,fill:"none",stroke:c.hex,"stroke-width":"0.55",opacity:"0.13"}));
+    // Progress arc
+    if(pct>0){const ci=2*Math.PI*(R+5);grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R+5,fill:"none",stroke:c.hex,"stroke-width":"2","stroke-dasharray":`${ci*pct/100} ${ci}`,"stroke-dashoffset":ci*.25,"stroke-linecap":"round",opacity:".62",filter:`url(#${c.gf})`}));}
+    // Main orb
+    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R,fill:"rgba(5,5,14,.97)",stroke:c.hex,"stroke-width":"1.7",filter:`url(#${c.gf})`}));
+    grp.appendChild(svgE("circle",{cx:p.x,cy:p.y,r:R*.7,fill:`${c.hex}14`,stroke:"none"}));
+    grp.appendChild(svgE("circle",{cx:p.x-R*.22,cy:p.y-R*.22,r:R*.26,fill:"rgba(255,255,255,.07)",stroke:"none"}));
+    // Stats inside
+    if(tot>0)svgT(grp,p.x,p.y+3.5,`${pct}%`,{fill:"rgba(255,255,255,.88)","font-family":"'JetBrains Mono',monospace","font-size":"9","font-weight":"600"});
+    else svgT(grp,p.x,p.y+2.5,"NEW",{fill:c.hex,"font-family":"'Oxanium',sans-serif","font-size":"7.5","font-weight":"700",opacity:".55"});
+    // Goal title & category
+    const lx=p.x+Math.cos(ang)*(R+28), ly=p.y+Math.sin(ang)*(R+28);
     const anch=p.x>CX+10?"start":p.x<CX-10?"end":"middle";
-    const lines=wrapTxt(g.title,11);
-    lines.forEach((line,li)=>svgT(grp,lx,ly+(lines.length>1?li===0?-7:7:0),line,{fill:c.hex,"font-family":"'Plus Jakarta Sans',sans-serif","font-size":"9","font-weight":"700","text-anchor":anch,opacity:".9"}));
-    if(tot>0)svgT(grp,p.x,p.y,`${pct}%`,{fill:c.hex,"font-family":"'JetBrains Mono',monospace","font-size":"7.5",opacity:".8"});
+    const catName=Object.keys(GOAL_CAT_COLOR).find(k=>GOAL_CAT_COLOR[k]===g.color);
+    const lines=wrapTxt(g.title,10);
+    lines.forEach((line,li)=>svgT(grp,lx,ly+(lines.length>1?li===0?-7:6:0),line,{fill:c.hex,"font-family":"'Plus Jakarta Sans',sans-serif","font-size":"9","font-weight":"700","text-anchor":anch,opacity:".92"}));
+    if(catName)svgT(grp,lx,ly+(lines.length>1?18:13),catName.toUpperCase(),{fill:c.hex,"font-family":"'JetBrains Mono',monospace","font-size":"5.5","letter-spacing":"1.5","text-anchor":anch,opacity:".38"});
     svg.appendChild(grp);
-    // Habit satellites floating around this goal node
-    const catKey=Object.keys(GOAL_CAT_COLOR).find(k=>GC[g.color]===GC[GOAL_CAT_COLOR[k]])||null;
-    const goalHabits=(habits||[]).filter(h=>h.goalCat&&GOAL_CAT_COLOR[h.goalCat]===g.color);
-    goalHabits.slice(0,6).forEach((h,hi)=>{
-      const orbitR=R+32+Math.floor(hi/3)*18;
-      const baseAng=ang+(hi%3-1)*0.45;
-      const hx=p.x+Math.cos(baseAng)*orbitR,hy=p.y+Math.sin(baseAng)*orbitR;
-      const hr=5;
+    // ── HABIT SATELLITES ───────────────────────────────
+    const goalHabits=(habits||[]).filter(h=>h.goalCat&&GOAL_CAT_COLOR[h.goalCat]===g.color&&!h.isBad);
+    const totalH=Math.min(goalHabits.length,8);
+    goalHabits.slice(0,8).forEach((h,hi)=>{
+      const row=Math.floor(hi/4), col=hi%4;
+      const orbitR=R+36+row*20;
+      const spread=Math.PI*.7;
+      const hAng=totalH>1?ang-spread/2+col*(spread/(Math.min(totalH,4)-1||1)):ang;
+      const hx=p.x+Math.cos(hAng)*orbitR, hy=p.y+Math.sin(hAng)*orbitR;
       const isDone=h.status==="complete";
-      const hg=svgE("g");hg.style.cursor="default";
-      // Line from goal to habit
-      svg.appendChild(svgE("line",{x1:p.x,y1:p.y,x2:hx,y2:hy,stroke:c.hex,"stroke-width":".4",opacity:".2","stroke-dasharray":"2 4"}));
-      hg.appendChild(svgE("circle",{cx:hx,cy:hy,r:hr,fill:isDone?c.hex:"rgba(8,8,18,.9)",stroke:c.hex,"stroke-width":"1",opacity:isDone?"0.9":"0.45"}));
-      if(isDone)hg.appendChild(svgE("circle",{cx:hx,cy:hy,r:hr+3,fill:"none",stroke:c.hex,"stroke-width":".4",opacity:".3"}));
-      svg.appendChild(hg);
+      // Connection
+      svg.appendChild(svgE("line",{x1:p.x,y1:p.y,x2:hx,y2:hy,stroke:c.hex,"stroke-width":"0.32",opacity:".16","stroke-dasharray":"2 5"}));
+      const hGrp=svgE("g");
+      if(isDone)hGrp.appendChild(svgE("circle",{cx:hx,cy:hy,r:"8",fill:`${c.hex}12`,stroke:"none"}));
+      hGrp.appendChild(svgE("circle",{cx:hx,cy:hy,r:isDone?"5":"3.5",fill:isDone?c.hex:`${c.hex}25`,stroke:c.hex,"stroke-width":"0.8",opacity:isDone?"1":".55"}));
+      const nAnch=hx<p.x?"end":"start";
+      const shortName=h.name.length>14?h.name.slice(0,13)+"…":h.name;
+      const nameOff=Math.cos(hAng)*10, nameOffY=Math.sin(hAng)*10;
+      svgT(hGrp,hx+nameOff,hy+nameOffY,shortName,{fill:isDone?c.hex:"rgba(140,135,185,.42)","font-family":"'JetBrains Mono',monospace","font-size":"5","text-anchor":nAnch,opacity:isDone?".82":".42"});
+      svg.appendChild(hGrp);
     });
   });
-  if(!goals.length){svgT(svg,CX,CY+35,"NO GOALS YET",{fill:"rgba(100,90,200,.2)","font-family":"'Oxanium',sans-serif","font-size":"16","letter-spacing":"4"});svgT(svg,CX,CY+56,"TAP + NEW GOAL",{fill:"rgba(100,90,200,.15)","font-family":"'JetBrains Mono',monospace","font-size":"9","letter-spacing":"2"});}
+  if(!goals.length){
+    svgT(svg,CX,CY+58,"NO GOALS YET",{fill:"rgba(100,90,200,.18)","font-family":"'Oxanium',sans-serif","font-size":"14","letter-spacing":"4"});
+    svgT(svg,CX,CY+76,"TAP + TO BEGIN",{fill:"rgba(100,90,200,.1)","font-family":"'JetBrains Mono',monospace","font-size":"8","letter-spacing":"2"});
+  }
 }
 function drawExpanded(svg,g,goals,onGoal,onMonth){
   const c=GC[g.color],curM=new Date().getMonth()+1;
@@ -797,20 +847,39 @@ function GoalsScreen({goals,setGoals,nGid,setNGid,showToast,habits}) {
   const dG=goals.reduce((a,g)=>a+Object.values(g.monthlyGoals).filter(m=>m.done&&m.text).length,0);
   return (
     <div style={{height:"100dvh",padding:0,position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:0,left:0,right:0,zIndex:20,padding:"calc(var(--sat) + 16px) 22px 18px",background:"linear-gradient(to bottom,rgba(8,8,15,.97) 58%,transparent)"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+      <div style={{position:"absolute",top:0,left:0,right:0,zIndex:20,padding:"calc(var(--sat) + 14px) 20px 16px",background:"linear-gradient(to bottom,rgba(4,4,12,.98) 60%,transparent)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:sel?0:10}}>
           <div>
-            {!sel?<div style={{fontFamily:"var(--fd)",fontSize:26,fontWeight:800,color:"var(--t6)",letterSpacing:".04em"}}>GOAL <span style={{background:"linear-gradient(135deg,#818cf8,#67e8f9)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>NETWORK</span></div>
-              :<div style={{fontFamily:"var(--fd)",fontSize:26,fontWeight:800,color:"var(--t6)",letterSpacing:".04em"}}>{sg?.title.toUpperCase()}</div>}
-            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",marginTop:5,color:gc2?gc2.hex:"var(--t2)"}}>
-              {!sel?`${goals.length} goals · ${dG}/${tG||0} complete · ${yr}`:`${Object.values(sg.monthlyGoals).filter(m=>m.done&&m.text).length}/${Object.values(sg.monthlyGoals).filter(m=>m.text).length||0} complete · ${gc2.label} · ${yr}`}
+            {!sel
+              ?<div style={{fontFamily:"var(--fd)",fontSize:24,fontWeight:800,letterSpacing:".05em"}}>
+                <span style={{color:"var(--t6)"}}>GOAL </span>
+                <span style={{background:"linear-gradient(135deg,#818cf8 0%,#67e8f9 55%,#a78bfa 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",backgroundSize:"200% 100%",animation:"shimmer 6s linear infinite"}}>NETWORK</span>
+              </div>
+              :<div style={{fontFamily:"var(--fd)",fontSize:22,fontWeight:800,color:gc2?.hex||"var(--t6)",letterSpacing:".04em",textShadow:`0 0 20px ${gc2?.hex||"transparent"}44`}}>{sg?.title.toUpperCase()}</div>}
+            <div style={{fontFamily:"var(--fm)",fontSize:7.5,letterSpacing:".18em",textTransform:"uppercase",marginTop:4,color:gc2?gc2.hex:"var(--t2)",opacity:.7}}>
+              {!sel?`${goals.length} goals · ${dG}/${tG||0} milestones`:`${Object.values(sg.monthlyGoals).filter(m=>m.done&&m.text).length}/${Object.values(sg.monthlyGoals).filter(m=>m.text).length||0} complete · ${yr}`}
             </div>
           </div>
-          <div style={{display:"flex",gap:8,paddingTop:3}}>
+          <div style={{display:"flex",gap:7,paddingTop:2}}>
             {sel&&<><button style={C.btnGhost} onClick={()=>setSel(null)}>← BACK</button><button style={{...C.btnGhost,color:gc2.hex,borderColor:`${gc2.hex}44`}} onClick={()=>setEditGoal(goals.find(x=>x.id===sel))}>EDIT</button></>}
-            {!sel&&<button style={C.btnAcc} onClick={()=>setEditGoal({id:null,title:"",color:"vi"})}>+ NEW GOAL</button>}
+            {!sel&&<button style={C.btnAcc} onClick={()=>setEditGoal({id:null,title:"",color:"em"})}>+ NEW</button>}
           </div>
         </div>
+        {/* Category stats pills — only in overview */}
+        {!sel&&<div style={{display:"flex",gap:6,flexWrap:"nowrap",overflowX:"auto"}}>
+          {Object.entries(GOAL_CAT_COLOR).map(([cat,colorKey])=>{
+            const c=GC[colorKey];
+            const catH=(habits||[]).filter(h=>h.goalCat===cat&&!h.isBad);
+            const done=catH.filter(h=>h.status==="complete").length;
+            return(
+              <div key={cat} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,background:`${c.hex}10`,border:`1px solid ${c.hex}28`,flexShrink:0}}>
+                <div style={{width:5,height:5,borderRadius:"50%",background:c.hex,boxShadow:`0 0 6px ${c.hex}`,animation:"breathe 3s ease-in-out infinite"}}/>
+                <span style={{fontFamily:"var(--fm)",fontSize:7,color:c.hex,letterSpacing:".12em",textTransform:"uppercase"}}>{cat}</span>
+                <span style={{fontFamily:"var(--fd)",fontSize:9,color:c.hex,opacity:.65,fontWeight:700}}>{done}/{catH.length}</span>
+              </div>
+            );
+          })}
+        </div>}
       </div>
       <svg ref={svgRef} viewBox="0 0 390 630" preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block",touchAction:"manipulation"}}>
         <defs>
@@ -822,12 +891,12 @@ function GoalsScreen({goals,setGoals,nGid,setNGid,showToast,habits}) {
           <filter id="gf-hub" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
       </svg>
-      {editGoal!==null&&<GoalEditSheet goal={editGoal} goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} onClose={()=>setEditGoal(null)} setSel={setSel} toast={showToast}/>}
+      {editGoal!==null&&<GoalEditSheet goal={editGoal} goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} onClose={()=>setEditGoal(null)} setSel={setSel} toast={showToast} habits={habits}/>}
       {moSheet&&<MonthSheet gid={moSheet.gid} month={moSheet.m} goals={goals} setGoals={setGoals} onClose={()=>setMoSheet(null)} toast={showToast}/>}
     </div>
   );
 }
-function GoalEditSheet({goal,goals,setGoals,nGid,setNGid,onClose,setSel,toast}) {
+function GoalEditSheet({goal,goals,setGoals,nGid,setNGid,onClose,setSel,toast,habits=[]}) {
   const isNew=!goal.id;
   const [title,setTitle]=useState(goal.title||"");
   const [color,setColor]=useState(goal.color||"vi");
@@ -838,14 +907,23 @@ function GoalEditSheet({goal,goals,setGoals,nGid,setNGid,onClose,setSel,toast}) 
     <div style={C.shBody}>
       <label style={C.flabel}>Goal Title</label>
       <input style={C.finput} value={title} onChange={e=>setTitle(e.target.value)} placeholder="What will you conquer this year?" maxLength={60}/>
-      <label style={C.flabel}>Category</label>
-      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:22}}>
-        {Object.entries(GC).map(([k,v])=>(
-          <div key={k} onClick={()=>setColor(k)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:16,border:`1px solid ${color===k?"rgba(255,255,255,.2)":"var(--e0)"}`,cursor:"pointer",background:color===k?"rgba(255,255,255,.07)":"var(--g1)"}}>
-            <div style={{width:11,height:11,borderRadius:"50%",background:v.hex,boxShadow:color===k?`0 0 10px ${v.hex}`:""}}/>
-            <span style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:".12em",textTransform:"uppercase",color:color===k?v.hex:"var(--t2)"}}>{v.label}</span>
-          </div>
-        ))}
+      <label style={C.flabel}>Domain</label>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:22}}>
+        {Object.entries(GOAL_CAT_COLOR).map(([cat,colorKey])=>{
+          const c=GC[colorKey];
+          const icons={physical:"💪",financial:"💰",mental:"🧠",social:"👥"};
+          const active=color===colorKey;
+          return(
+            <div key={cat} onClick={()=>setColor(colorKey)} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:16,border:`1px solid ${active?c.hex+"55":"var(--e0)"}`,cursor:"pointer",background:active?`${c.hex}12`:"var(--g1)",transition:"all .18s ease",boxShadow:active?`0 0 16px ${c.hex}18`:"none"}}>
+              <span style={{fontSize:18}}>{icons[cat]}</span>
+              <div>
+                <div style={{fontFamily:"var(--fb)",fontSize:13,fontWeight:active?600:400,color:active?c.hex:"var(--t4)"}}>{cat.charAt(0).toUpperCase()+cat.slice(1)}</div>
+                <div style={{fontFamily:"var(--fm)",fontSize:7,color:active?c.hex:"var(--t1)",letterSpacing:".1em",opacity:.7,textTransform:"uppercase",marginTop:1}}>{habits.filter(h=>h.goalCat===cat).length} habits</div>
+              </div>
+              {active&&<div style={{marginLeft:"auto",width:7,height:7,borderRadius:"50%",background:c.hex,boxShadow:`0 0 10px ${c.hex}`}}/>}
+            </div>
+          );
+        })}
       </div>
       <div style={{display:"flex",gap:10}}>
         <button style={{...C.btnPri,flex:1}} onClick={save}>SAVE GOAL</button>
