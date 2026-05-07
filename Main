@@ -2179,8 +2179,13 @@ function App() {
         setTimeout(()=>{receivingRemote.current=false;},500);
       }catch{}
     };
-    const id=setInterval(poll,30000);
-    return()=>clearInterval(id);
+    // Poll every 10 seconds
+    const id=setInterval(poll,10000);
+    // Also pull immediately when tab/app becomes visible
+    const onVisible=()=>{if(!document.hidden)poll();};
+    document.addEventListener('visibilitychange',onVisible);
+    window.addEventListener('focus',poll);
+    return()=>{clearInterval(id);document.removeEventListener('visibilitychange',onVisible);window.removeEventListener('focus',poll);};
   },[]);
 
   async function getGitHubToken(){
