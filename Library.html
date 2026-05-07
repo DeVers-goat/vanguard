@@ -4,34 +4,156 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Library</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Oxanium:wght@700;800&display=swap" />
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; }
-    body { background: #08080f; color: #f5f5ff; font-family: 'Segoe UI', system-ui, sans-serif; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #0f0f1a; }
-    ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-in { animation: fadeIn 0.35s ease forwards; }
-    .spinner { width: 20px; height: 20px; border: 2px solid #2a2a4a; border-top-color: #7c6ef7; border-radius: 50%; animation: spin 0.7s linear infinite; }
-    input:focus { border-color: #7c6ef7 !important; }
-    button:hover:not(:disabled) { filter: brightness(1.12); }
-    button:active:not(:disabled) { transform: scale(0.98); }
-    .suggestion-item:hover { background: #14142a !important; }
-    .book-tile { transition: transform 0.18s; }
-    .book-tile:hover { transform: translateY(-4px); }
-    .book-tile-overlay { transition: opacity 0.2s; }
-    .book-tile-remove  { transition: opacity 0.15s; }
-    .book-tile-edit    { transition: opacity 0.15s; }
-    .book-tile:hover .book-tile-overlay { opacity: 1 !important; }
-    .book-tile:hover .book-tile-remove  { opacity: 1 !important; }
-    .book-tile:hover .book-tile-edit    { opacity: 1 !important; }
-    textarea:focus { border-color: #7c6ef7 !important; }
-    .tab-btn { flex:1; padding:8px; border:none; border-radius:7px; cursor:pointer; font-size:13px; font-weight:600; transition:background 0.15s,color 0.15s; }
+
+    :root {
+      --canvas: #08080f;
+      --g0: rgba(255,255,255,.028); --g1: rgba(255,255,255,.052);
+      --g2: rgba(255,255,255,.085); --e0: rgba(255,255,255,.055);
+      --t0: #1a1a30; --t1: #3a3a5a; --t2: #6868a0; --t3: #9898c8; --t4: #c4c4e0; --t5: #e8e8f8; --t6: #f5f5ff;
+      --p: #7c6ef8; --p1: rgba(124,110,248,.16); --p2: rgba(124,110,248,.08);
+      --em: #2dd4a0; --em1: rgba(45,212,160,.14); --em2: rgba(45,212,160,.06);
+      --am: #f5a623; --am1: rgba(245,166,35,.14);
+      --ro: #f06292; --ro1: rgba(240,98,146,.14);
+      --sk: #38b2f8; --sk1: rgba(56,178,248,.14);
+      --or: #f97136; --or1: rgba(249,113,54,.14);
+      --gold: #e4b84a; --gold1: rgba(228,184,74,.14);
+      --surface: #0f0f1a; --surface2: #14142a; --surface3: #1a1a2e;
+      --border: rgba(255,255,255,.07); --border-p: rgba(124,110,248,.22);
+      --fd: 'Oxanium', sans-serif; --fm: 'JetBrains Mono', monospace; --fb: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background: var(--canvas);
+      color: var(--t4);
+      font-family: var(--fb);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(124,110,248,.25); border-radius: 4px; }
+
+    input, button, textarea, select { font-family: inherit; outline: none; border: none; background: none; }
+    textarea { resize: none; }
+
+    /* ── BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(124,110,248,.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,110,248,.022) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridPan 80s linear infinite;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 65% 50% at 10% 5%, rgba(124,110,248,.09) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 40% at 88% 92%, rgba(45,212,160,.05) 0%, transparent 60%),
+        radial-gradient(ellipse 30% 30% at 72% 8%, rgba(56,178,248,.04) 0%, transparent 55%);
+    }
+    #root { position: relative; z-index: 1; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes gridPan     { 0% { background-position: 0 0; } 100% { background-position: 48px 48px; } }
+    @keyframes fadeUp      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn      { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp     { from { opacity: 0; transform: translateY(44px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes textReveal  { from { opacity: 0; filter: blur(6px); transform: translateY(8px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+    @keyframes staggerFade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin        { to { transform: rotate(360deg); } }
+    @keyframes bouncePop   { 0% { transform: scale(.3); opacity: 0; } 55% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes float       { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes glowPulse   { 0%, 100% { box-shadow: 0 0 0 1px rgba(124,110,248,.18), 0 4px 28px rgba(0,0,0,.5); } 50% { box-shadow: 0 0 0 1px rgba(124,110,248,.4), 0 4px 36px rgba(124,110,248,.22); } }
+    @keyframes coverReveal { from { opacity: 0; transform: scale(.92) translateY(20px); filter: blur(8px); } to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } }
+    @keyframes slideRight  { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pop         { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 70% { transform: scale(.96); } 100% { transform: scale(1); } }
+    @keyframes shimmerBg   { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes badgeIn     { from { opacity: 0; transform: scale(.4); } 60% { transform: scale(1.15); } to { opacity: 1; transform: scale(1); } }
+    @keyframes sectionIn   { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* ── UTILITY CLASSES ── */
+    .au           { animation: fadeUp .4s cubic-bezier(.22,1,.36,1) both; }
+    .text-reveal  { animation: textReveal .6s cubic-bezier(.22,1,.36,1) both; }
+    .float        { animation: float 3.4s ease-in-out infinite; }
+    .pop          { animation: pop .4s cubic-bezier(.34,1.56,.64,1) both; }
+
+    .stagger > *                  { animation: staggerFade .5s cubic-bezier(.22,1,.36,1) both; }
+    .stagger > *:nth-child(1)     { animation-delay: .04s; }
+    .stagger > *:nth-child(2)     { animation-delay: .09s; }
+    .stagger > *:nth-child(3)     { animation-delay: .14s; }
+    .stagger > *:nth-child(4)     { animation-delay: .19s; }
+    .stagger > *:nth-child(5)     { animation-delay: .24s; }
+    .stagger > *:nth-child(6)     { animation-delay: .29s; }
+    .stagger > *:nth-child(7)     { animation-delay: .34s; }
+    .stagger > *:nth-child(8)     { animation-delay: .39s; }
+    .stagger > *:nth-child(n+9)   { animation-delay: .44s; }
+
+    /* ── BUTTONS ── */
+    button {
+      cursor: pointer;
+      transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, filter .22s ease, background .22s ease;
+    }
+    button:hover  { filter: brightness(1.08); }
+    button:active { transform: scale(.96); transition: transform .1s ease-out; }
+
+    .btn-shine { position: relative; overflow: hidden; isolation: isolate; }
+    .btn-shine::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.22) 50%, transparent 60%);
+      transform: translateX(-120%);
+      transition: transform .7s cubic-bezier(.22,1,.36,1);
+      pointer-events: none;
+    }
+    .btn-shine:hover::before { transform: translateX(120%); }
+
+    .btn-lift:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(109,95,245,.4), 0 2px 0 rgba(255,255,255,.08) inset; }
+    .btn-lift:active { transform: translateY(0) scale(.97); }
+
+    /* ── CARDS ── */
+    .card-tilt {
+      transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
+    }
+    .card-tilt:hover {
+      transform: translateY(-5px) scale(1.018);
+      box-shadow: 0 18px 44px rgba(0,0,0,.6), 0 0 0 1px rgba(124,110,248,.2);
+    }
+
+    /* ── INPUTS ── */
+    input:focus, textarea:focus {
+      border-color: rgba(124,110,248,.5) !important;
+      box-shadow: 0 0 0 3px rgba(124,110,248,.1) !important;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    /* ── ANALYSIS ── */
+    .section-in { animation: sectionIn .5s cubic-bezier(.22,1,.36,1) both; }
+    .section-in:nth-child(1) { animation-delay: .06s; }
+    .section-in:nth-child(2) { animation-delay: .16s; }
+    .section-in:nth-child(3) { animation-delay: .26s; }
+    .section-in:nth-child(4) { animation-delay: .36s; }
+
+    /* ── MISC ── */
+    .suggestion-item:hover { background: rgba(124,110,248,.07) !important; }
+    .chapter-btn:hover     { background: rgba(124,110,248,.06) !important; }
+    .tab-btn               { flex: 1; padding: 8px; border-radius: 7px; font-size: 13px; font-weight: 600; transition: background .15s, color .15s; cursor: pointer; border: none; }
+    .cover-enter           { animation: coverReveal .55s cubic-bezier(.22,1,.36,1) both; }
+    .badge-pop             { animation: badgeIn .4s cubic-bezier(.34,1.56,.64,1) both; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
 <body>
@@ -39,11 +161,18 @@
   <script type="text/babel">
     const { useState, useEffect, useRef, useCallback } = React;
 
+    // ── TOKENS ──────────────────────────────────────────────────────────────────
     const C = {
-      bg: '#08080f', surface: '#0f0f1a', surface2: '#14142a',
-      border: '#1e1e3a', accent: '#7c6ef7', text: '#f5f5ff',
-      muted: '#7777aa', gold: '#f5c518', green: '#3de8a0',
-      purple: '#c084fc', error: '#f56565',
+      canvas:'#08080f', surface:'#0f0f1a', surface2:'#14142a', surface3:'#1a1a2e',
+      border:'rgba(255,255,255,.07)', borderP:'rgba(124,110,248,.22)',
+      p:'#7c6ef8', p1:'rgba(124,110,248,.16)', p2:'rgba(124,110,248,.08)',
+      em:'#2dd4a0', em1:'rgba(45,212,160,.14)',
+      gold:'#e4b84a', gold1:'rgba(228,184,74,.14)',
+      sk:'#38b2f8', sk1:'rgba(56,178,248,.14)',
+      ro:'#f06292', ro1:'rgba(240,98,146,.14)',
+      am:'#f5a623', am1:'rgba(245,166,35,.14)',
+      t2:'#6868a0', t3:'#9898c8', t4:'#c4c4e0', t5:'#e8e8f8', t6:'#f5f5ff',
+      error:'#f06292',
     };
 
     function debounce(fn, ms) {
@@ -51,6 +180,7 @@
       return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     }
 
+    // ── AI CALL (Gemini) ─────────────────────────────────────────────────────────
     async function callAI(apiKey, title, authors, description) {
       const prompt = `You are an expert book analyst creating a permanent reference summary for someone who wants to deeply understand and revisit "${title}" by ${authors} at any time.${description ? `\n\nPublisher description: ${description}` : ''}
 
@@ -74,17 +204,12 @@ Rules:
 - Real life takeaways must be specific and actionable with a clear outcome described.
 - Write as if this reference will be read years from now by someone who has forgotten the book.`;
 
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 8000,
-          temperature: 0.7,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
         }),
       });
 
@@ -94,18 +219,16 @@ Rules:
       }
 
       const data = await res.json();
-      let text = data.choices[0].message.content.trim();
+      let text = (data.candidates[0].content.parts[0].text || '').trim();
       text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
       try {
         return JSON.parse(text);
       } catch {
-        // Truncated JSON — find last complete chapter entry and close the structure
         const summaryMatch = text.match(/"summary"\s*:\s*"([\s\S]*?)"\s*,\s*"goldenTips"/);
-        const tipsMatch = text.match(/"goldenTips"\s*:\s*(\[[\s\S]*?\])\s*,\s*"realLife"/);
-        const realMatch = text.match(/"realLife"\s*:\s*(\[[\s\S]*?\])\s*,\s*"chapters"/);
+        const tipsMatch    = text.match(/"goldenTips"\s*:\s*(\[[\s\S]*?\])\s*,\s*"realLife"/);
+        const realMatch    = text.match(/"realLife"\s*:\s*(\[[\s\S]*?\])\s*,\s*"chapters"/);
         const chaptersStart = text.indexOf('"chapters"');
         if (chaptersStart === -1) throw new Error('AI returned malformed JSON — please try again');
-        // Find last fully closed chapter object
         let chaptersStr = text.slice(chaptersStart + '"chapters"'.length).replace(/^\s*:\s*/, '');
         const lastClose = chaptersStr.lastIndexOf('}');
         if (lastClose !== -1) chaptersStr = chaptersStr.slice(0, lastClose + 1) + ']';
@@ -120,31 +243,67 @@ Rules:
       }
     }
 
-    // ── Settings Modal ──────────────────────────────────────────────────────────
+    // ── SETTINGS MODAL ───────────────────────────────────────────────────────────
     function SettingsModal({ apiKey, onSave, onClose }) {
       const [val, setVal] = useState(apiKey || '');
       const save = () => { onSave(val.trim()); onClose(); };
       return (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200}} onClick={onClose}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:36,width:480,maxWidth:'90vw'}} onClick={e=>e.stopPropagation()}>
-            <h2 style={{marginBottom:8,fontSize:20,fontWeight:700}}>Settings</h2>
-            <p style={{color:C.muted,fontSize:14,marginBottom:28,lineHeight:1.6}}>Paste your Groq API key for free AI book analysis. 14,400 requests/day free — no credit card needed.</p>
-            <label style={{fontSize:12,color:C.muted,display:'block',marginBottom:8,textTransform:'uppercase',letterSpacing:1}}>Groq API Key</label>
+        <div
+          onClick={onClose}
+          style={{position:'fixed',inset:0,background:'rgba(0,0,0,.72)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300}}
+        >
+          <div
+            onClick={e=>e.stopPropagation()}
+            style={{
+              background:C.surface, border:`1px solid ${C.borderP}`,
+              borderRadius:20, padding:36, width:480, maxWidth:'92vw',
+              boxShadow:'0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(124,110,248,.12)',
+              animation:'slideUp .35s cubic-bezier(.22,1,.36,1) both',
+            }}
+          >
+            {/* Header */}
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
+              <div style={{width:36,height:36,borderRadius:10,background:C.p1,border:`1px solid ${C.borderP}`,display:'flex',alignItems:'center',justifyContent:'center',color:C.p}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <h2 style={{fontSize:18,fontWeight:800,fontFamily:'var(--fd)',color:C.t6}}>API Settings</h2>
+            </div>
+            <p style={{color:C.t3,fontSize:13,marginBottom:28,lineHeight:1.65,paddingLeft:48}}>
+              Paste your Gemini key to enable AI book analysis. Free tier — no credit card needed.
+            </p>
+
+            <label style={{fontSize:11,color:C.t2,display:'block',marginBottom:8,textTransform:'uppercase',letterSpacing:1.1,fontFamily:'var(--fm)'}}>Gemini API Key</label>
             <input
               type="password" value={val} onChange={e=>setVal(e.target.value)}
               onKeyDown={e=>e.key==='Enter'&&save()}
-              placeholder="gsk_..."
+              placeholder="AIza..."
               autoFocus
-              style={{width:'100%',background:C.surface2,border:`1px solid ${C.border}`,borderRadius:10,padding:'13px 15px',color:C.text,fontSize:14,outline:'none',transition:'border-color 0.2s'}}
+              style={{
+                width:'100%', background:C.surface2,
+                border:`1px solid ${C.border}`, borderRadius:10,
+                padding:'13px 15px', color:C.t6, fontSize:14,
+                transition:'border-color .2s ease,box-shadow .2s ease',
+              }}
             />
-            <p style={{fontSize:12,color:C.muted,marginTop:8}}>
-              Free key at <span style={{color:C.accent}}>console.groq.com</span> — no credit card needed
+            <p style={{fontSize:12,color:C.t2,marginTop:8,lineHeight:1.5}}>
+              Get a free key at{' '}
+              <span style={{color:C.p,fontWeight:600}}>aistudio.google.com</span>
             </p>
-            <div style={{display:'flex',gap:12,marginTop:28}}>
-              <button onClick={save} style={{flex:1,padding:'13px',background:C.accent,border:'none',borderRadius:10,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,transition:'filter 0.15s'}}>
+
+            <div style={{display:'flex',gap:10,marginTop:28}}>
+              <button
+                onClick={save}
+                className="btn-shine btn-lift"
+                style={{flex:1,padding:'13px',background:C.p,border:'none',borderRadius:10,color:'#fff',fontWeight:700,fontSize:14,letterSpacing:.3}}
+              >
                 Save Key
               </button>
-              <button onClick={onClose} style={{padding:'13px 22px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:10,color:C.muted,cursor:'pointer',fontSize:15}}>
+              <button
+                onClick={onClose}
+                style={{padding:'13px 22px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:10,color:C.t3,fontSize:14}}
+              >
                 Cancel
               </button>
             </div>
@@ -153,123 +312,186 @@ Rules:
       );
     }
 
-    // ── Book Card ────────────────────────────────────────────────────────────────
+    // ── BOOK CARD (selected detail view) ─────────────────────────────────────────
     function BookCard({ book }) {
       const v = book.volumeInfo;
       const cover = v.imageLinks?.thumbnail?.replace('http:', 'https:') || v.imageLinks?.smallThumbnail?.replace('http:', 'https:');
       return (
-        <div style={{display:'flex',gap:22,padding:24,background:C.surface,border:`1px solid ${C.border}`,borderRadius:16}}>
+        <div className="cover-enter" style={{
+          display:'flex', gap:24, padding:26,
+          background:C.surface, border:`1px solid ${C.border}`,
+          borderRadius:18, position:'relative', overflow:'hidden',
+        }}>
+          {/* Top accent line */}
+          <div style={{position:'absolute',top:0,left:'8%',right:'8%',height:1,background:`linear-gradient(to right,transparent,${C.p} 40%,transparent)`,opacity:.3}} />
+
           {cover
-            ? <img src={cover} alt={v.title} style={{width:88,height:130,objectFit:'cover',borderRadius:8,flexShrink:0,boxShadow:'0 4px 20px rgba(0,0,0,0.5)'}} />
-            : <div style={{width:88,height:130,background:C.surface2,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',color:C.muted,fontSize:11,flexShrink:0}}>No Cover</div>
+            ? <img src={cover} alt={v.title} className="cover-enter" style={{width:90,height:134,objectFit:'cover',borderRadius:8,flexShrink:0,boxShadow:`0 8px 28px rgba(0,0,0,.6), 0 0 0 1px ${C.border}`}} />
+            : <div style={{width:90,height:134,background:C.surface2,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',color:C.t2,fontSize:11,flexShrink:0,border:`1px solid ${C.border}`}}>No Cover</div>
           }
-          <div style={{flex:1,minWidth:0}}>
-            <h2 style={{fontSize:21,fontWeight:800,lineHeight:1.3,marginBottom:6}}>{v.title}</h2>
-            {v.subtitle && <p style={{color:C.muted,fontSize:14,marginBottom:10,lineHeight:1.4}}>{v.subtitle}</p>}
-            <p style={{color:C.accent,fontSize:14,fontWeight:600,marginBottom:14}}>{(v.authors||['Unknown Author']).join(', ')}</p>
-            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-              {v.pageCount && <Tag>{v.pageCount} pages</Tag>}
-              {v.publishedDate && <Tag>{v.publishedDate.slice(0,4)}</Tag>}
-              {v.categories && v.categories[0] && <Tag>{v.categories[0]}</Tag>}
+          <div style={{flex:1,minWidth:0,paddingTop:4}}>
+            <h2 className="text-reveal" style={{fontSize:20,fontWeight:800,lineHeight:1.3,marginBottom:5,color:C.t6,fontFamily:'var(--fd)'}}>{v.title}</h2>
+            {v.subtitle && <p style={{color:C.t3,fontSize:13,marginBottom:10,lineHeight:1.45}}>{v.subtitle}</p>}
+            <p style={{color:C.p,fontSize:13,fontWeight:700,marginBottom:14}}>{(v.authors||['Unknown Author']).join(', ')}</p>
+            <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+              {v.pageCount   && <MetaTag>{v.pageCount} pages</MetaTag>}
+              {v.publishedDate && <MetaTag>{v.publishedDate.slice(0,4)}</MetaTag>}
+              {v.categories?.[0] && <MetaTag accent>{v.categories[0]}</MetaTag>}
             </div>
           </div>
         </div>
       );
     }
 
-    function Tag({ children }) {
-      return <span style={{fontSize:12,color:C.muted,background:C.surface2,padding:'4px 10px',borderRadius:20,border:`1px solid ${C.border}`}}>{children}</span>;
+    function MetaTag({ children, accent }) {
+      return (
+        <span style={{
+          fontSize:11, fontFamily:'var(--fm)',
+          color: accent ? C.p : C.t2,
+          background: accent ? C.p2 : C.surface2,
+          border:`1px solid ${accent ? C.borderP : C.border}`,
+          padding:'3px 9px', borderRadius:20,
+        }}>
+          {children}
+        </span>
+      );
     }
 
-    // ── Book Cover Tile ───────────────────────────────────────────────────────────
+    // ── BOOK COVER TILE ───────────────────────────────────────────────────────────
     function BookCoverTile({ book, onSelect, onRemove, onEdit }) {
       const v = book.volumeInfo;
       const cover = v.imageLinks?.thumbnail?.replace('http:', 'https:');
       const authorStr = (v.authors || []).join(', ');
-      const hues = [240, 260, 280, 300, 200, 220];
-      const hue = hues[(v.title.charCodeAt(0) || 0) % hues.length];
-      const btnBase = {width:24,height:24,borderRadius:'50%',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',opacity:0,padding:0,lineHeight:1,position:'absolute',top:6};
+      const hues = [240, 260, 280, 300, 200, 220, 320, 190];
+      const hue  = hues[(v.title.charCodeAt(0) || 0) % hues.length];
+
       return (
         <div
-          className="book-tile"
+          className="card-tilt"
           onClick={() => onSelect(book)}
-          style={{position:'relative',width:'100%',paddingTop:'150%',borderRadius:10,overflow:'hidden',cursor:'pointer',boxShadow:'0 4px 20px rgba(0,0,0,0.45)'}}
+          style={{position:'relative',width:'100%',paddingTop:'150%',borderRadius:12,overflow:'hidden',cursor:'pointer',boxShadow:'0 6px 24px rgba(0,0,0,.5)'}}
         >
           <div style={{position:'absolute',inset:0}}>
             {cover
               ? <img src={cover} alt={v.title} style={{width:'100%',height:'100%',objectFit:'cover'}} />
-              : <div style={{width:'100%',height:'100%',background:`linear-gradient(135deg, hsl(${hue},38%,14%) 0%, hsl(${hue},48%,26%) 100%)`,display:'flex',alignItems:'center',justifyContent:'center',padding:12}}>
-                  <span style={{color:'rgba(255,255,255,0.88)',fontSize:13,fontWeight:700,textAlign:'center',lineHeight:1.4}}>{v.title}</span>
+              : <div style={{
+                  width:'100%',height:'100%',
+                  background:`linear-gradient(145deg, hsl(${hue},38%,12%) 0%, hsl(${hue},52%,24%) 100%)`,
+                  display:'flex',alignItems:'center',justifyContent:'center',padding:14,
+                }}>
+                  <span style={{color:'rgba(255,255,255,.85)',fontSize:12,fontWeight:700,textAlign:'center',lineHeight:1.45,fontFamily:'var(--fd)'}}>{v.title}</span>
                 </div>
             }
           </div>
-          <div className="book-tile-overlay" style={{position:'absolute',inset:0,background:'rgba(8,8,15,0.82)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:12,opacity:0}}>
-            <span style={{color:C.text,fontSize:13,fontWeight:700,textAlign:'center',lineHeight:1.4,marginBottom:6}}>{v.title}</span>
-            {authorStr && <span style={{color:C.muted,fontSize:11,textAlign:'center'}}>{authorStr}</span>}
-            {book.analysis && <span style={{color:C.green,fontSize:10,marginTop:6,fontWeight:600}}>Analysis saved</span>}
+
+          {/* Hover overlay */}
+          <div className="tile-overlay" style={{
+            position:'absolute',inset:0,
+            background:'linear-gradient(to top, rgba(8,8,15,.96) 0%, rgba(8,8,15,.6) 55%, transparent 100%)',
+            display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'flex-end',
+            padding:'10px 10px 10px',opacity:0,transition:'opacity .22s ease',
+          }}>
+            <span style={{color:C.t6,fontSize:12,fontWeight:700,lineHeight:1.35,marginBottom:3,fontFamily:'var(--fd)'}}>{v.title}</span>
+            {authorStr && <span style={{color:C.t3,fontSize:10}}>{authorStr.length > 22 ? authorStr.slice(0,20)+'…' : authorStr}</span>}
+            {book.analysis && (
+              <span className="badge-pop" style={{marginTop:5,fontSize:9,color:C.em,fontFamily:'var(--fm)',background:C.em1,border:`1px solid rgba(45,212,160,.3)`,padding:'2px 7px',borderRadius:20,letterSpacing:.4}}>
+                ✓ ANALYZED
+              </span>
+            )}
           </div>
-          <button className="book-tile-edit" onClick={e=>{e.stopPropagation();onEdit(book);}}
-            style={{...btnBase,left:6,background:'rgba(124,110,247,0.92)',color:'#fff',fontSize:11}}>
+
+          {/* Edit / Remove btns */}
+          <button
+            onClick={e=>{e.stopPropagation();onEdit(book);}}
+            className="tile-btn-edit"
+            style={{position:'absolute',top:7,left:7,width:26,height:26,borderRadius:'50%',background:'rgba(124,110,248,.88)',border:'none',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',opacity:0,transition:'opacity .18s ease'}}
+          >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
           </button>
-          <button className="book-tile-remove" onClick={e=>{e.stopPropagation();onRemove(book.id);}}
-            style={{...btnBase,right:6,background:'rgba(245,101,101,0.92)',color:'#fff',fontSize:14,fontWeight:700}}>×</button>
+          <button
+            onClick={e=>{e.stopPropagation();onRemove(book.id);}}
+            className="tile-btn-rm"
+            style={{position:'absolute',top:7,right:7,width:26,height:26,borderRadius:'50%',background:'rgba(240,98,146,.88)',border:'none',color:'#fff',fontSize:16,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',opacity:0,transition:'opacity .18s ease',lineHeight:1}}
+          >
+            ×
+          </button>
         </div>
       );
     }
 
-    // ── Library Grid ──────────────────────────────────────────────────────────────
+    // ── LIBRARY GRID ──────────────────────────────────────────────────────────────
     function LibraryGrid({ books, onSelect, onRemove, onEdit, onAddClick }) {
       return (
-        <div style={{marginBottom:40}}>
+        <div style={{marginBottom:48}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-            <h2 style={{fontSize:18,fontWeight:700,color:C.text}}>My Library</h2>
+            <h2 style={{fontSize:15,fontWeight:700,fontFamily:'var(--fm)',color:C.t3,letterSpacing:.6,textTransform:'uppercase'}}>
+              My Library <span style={{color:C.t2,marginLeft:6}}>{books.length}</span>
+            </h2>
             <button
               onClick={onAddClick}
-              style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px',background:C.accent,border:'none',borderRadius:10,color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',transition:'filter 0.15s'}}
+              className="btn-shine"
+              style={{
+                display:'flex',alignItems:'center',gap:6,
+                padding:'8px 16px',
+                background:C.p1, border:`1px solid ${C.borderP}`,
+                borderRadius:10, color:C.p,
+                fontWeight:700, fontSize:13,
+              }}
             >
-              <span style={{fontSize:18,lineHeight:1,marginTop:-1}}>+</span> Add Book
+              <span style={{fontSize:16,lineHeight:1,marginTop:-1}}>+</span> Add Book
             </button>
           </div>
+
           {books.length === 0
-            ? <div style={{textAlign:'center',padding:'48px 24px',border:`1px dashed ${C.border}`,borderRadius:16,color:C.muted}}>
-                <p style={{fontSize:15,marginBottom:6}}>Your library is empty</p>
-                <p style={{fontSize:13}}>Search for books above or click "Add Book" to add one manually.</p>
+            ? (
+              <div style={{textAlign:'center',padding:'56px 24px',border:`1px dashed rgba(124,110,248,.18)`,borderRadius:18,color:C.t2}}>
+                <svg className="float" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(124,110,248,.35)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:16}}>
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                <p style={{fontSize:15,fontWeight:700,color:C.t4,marginBottom:6,fontFamily:'var(--fd)'}}>Your library is empty</p>
+                <p style={{fontSize:13}}>Search for books above or click "Add Book".</p>
               </div>
-            : <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))',gap:18}}>
+            )
+            : (
+              <div className="stagger" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:16}}>
                 {books.map(b => (
                   <BookCoverTile key={b.id} book={b} onSelect={onSelect} onRemove={onRemove} onEdit={onEdit} />
                 ))}
               </div>
+            )
           }
         </div>
       );
     }
 
-    // ── Add Book Modal ────────────────────────────────────────────────────────────
+    // ── ADD BOOK MODAL ────────────────────────────────────────────────────────────
     function AddBookModal({ onSave, onClose }) {
-      const [title, setTitle] = useState('');
-      const [author, setAuthor] = useState('');
-      const [coverUrl, setCoverUrl] = useState('');
-      const [year, setYear] = useState('');
+      const [title, setTitle]           = useState('');
+      const [author, setAuthor]         = useState('');
+      const [coverUrl, setCoverUrl]     = useState('');
+      const [year, setYear]             = useState('');
       const [description, setDescription] = useState('');
-      const [errors, setErrors] = useState({});
+      const [errors, setErrors]         = useState({});
 
-      const inputStyle = {width:'100%',background:C.surface2,border:`1px solid ${C.border}`,borderRadius:10,padding:'12px 14px',color:C.text,fontSize:14,outline:'none',transition:'border-color 0.2s'};
-      const labelStyle = {fontSize:12,color:C.muted,display:'block',marginBottom:6,textTransform:'uppercase',letterSpacing:0.8};
-      const fieldStyle = {marginBottom:18};
+      const inp = {
+        width:'100%', background:C.surface2, border:`1px solid ${C.border}`,
+        borderRadius:10, padding:'12px 14px', color:C.t6, fontSize:14,
+        transition:'border-color .2s ease,box-shadow .2s ease',
+      };
+      const lbl = {fontSize:11,color:C.t2,display:'block',marginBottom:6,textTransform:'uppercase',letterSpacing:.9,fontFamily:'var(--fm)'};
+      const fld = {marginBottom:18};
+      const err = {color:C.error,fontSize:12,marginTop:4};
 
       const validate = () => {
         const e = {};
-        if (!title.trim()) e.title = 'Title is required';
+        if (!title.trim())  e.title  = 'Title is required';
         if (!author.trim()) e.author = 'Author is required';
         if (year.trim() && !/^\d{4}$/.test(year.trim())) e.year = 'Enter a valid 4-digit year';
         if (coverUrl.trim() && !coverUrl.trim().startsWith('http')) e.coverUrl = 'Enter a valid URL starting with http';
         return e;
       };
-
       const save = () => {
         const e = validate();
         if (Object.keys(e).length > 0) { setErrors(e); return; }
@@ -277,197 +499,204 @@ Rules:
       };
 
       return (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200}} onClick={onClose}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:36,width:520,maxWidth:'92vw',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-            <h2 style={{marginBottom:6,fontSize:20,fontWeight:700}}>Add Book</h2>
-            <p style={{color:C.muted,fontSize:13,marginBottom:28}}>Add a book manually to your library.</p>
-
-            <div style={fieldStyle}>
-              <label style={labelStyle}>Title *</label>
-              <input value={title} onChange={e=>{setTitle(e.target.value);setErrors(v=>({...v,title:''}));}} onKeyDown={e=>e.key==='Enter'&&save()} placeholder="e.g. The 48 Laws of Power" autoFocus style={inputStyle} />
-              {errors.title && <p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.title}</p>}
+        <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.72)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300}}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            background:C.surface, border:`1px solid ${C.borderP}`,
+            borderRadius:20, padding:34, width:520, maxWidth:'94vw', maxHeight:'90vh', overflowY:'auto',
+            boxShadow:'0 32px 80px rgba(0,0,0,.6)',
+            animation:'slideUp .35s cubic-bezier(.22,1,.36,1) both',
+          }}>
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
+              <div style={{width:36,height:36,borderRadius:10,background:C.p1,border:`1px solid ${C.borderP}`,display:'flex',alignItems:'center',justifyContent:'center',color:C.p}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 style={{fontSize:17,fontWeight:800,fontFamily:'var(--fd)',color:C.t6,lineHeight:1}}>Add Book</h2>
+                <p style={{color:C.t2,fontSize:12,marginTop:3}}>Add a book manually to your library</p>
+              </div>
             </div>
 
-            <div style={fieldStyle}>
-              <label style={labelStyle}>Author *</label>
-              <input value={author} onChange={e=>{setAuthor(e.target.value);setErrors(v=>({...v,author:''}));}} onKeyDown={e=>e.key==='Enter'&&save()} placeholder="e.g. Robert Greene" style={inputStyle} />
-              {errors.author && <p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.author}</p>}
+            <div style={fld}>
+              <label style={lbl}>Title *</label>
+              <input value={title} onChange={e=>{setTitle(e.target.value);setErrors(v=>({...v,title:''}));}} onKeyDown={e=>e.key==='Enter'&&save()} placeholder="e.g. The 48 Laws of Power" autoFocus style={inp} />
+              {errors.title && <p style={err}>{errors.title}</p>}
+            </div>
+            <div style={fld}>
+              <label style={lbl}>Author *</label>
+              <input value={author} onChange={e=>{setAuthor(e.target.value);setErrors(v=>({...v,author:''}));}} onKeyDown={e=>e.key==='Enter'&&save()} placeholder="e.g. Robert Greene" style={inp} />
+              {errors.author && <p style={err}>{errors.author}</p>}
+            </div>
+            <div style={fld}>
+              <label style={lbl}>Cover Image URL</label>
+              <input value={coverUrl} onChange={e=>{setCoverUrl(e.target.value);setErrors(v=>({...v,coverUrl:''}));}} placeholder="https://..." style={inp} />
+              {errors.coverUrl && <p style={err}>{errors.coverUrl}</p>}
+            </div>
+            <div style={fld}>
+              <label style={lbl}>Year</label>
+              <input value={year} onChange={e=>{setYear(e.target.value);setErrors(v=>({...v,year:''}));}} placeholder="e.g. 1998" style={inp} />
+              {errors.year && <p style={err}>{errors.year}</p>}
+            </div>
+            <div style={fld}>
+              <label style={lbl}>Description</label>
+              <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Brief description (optional)..." rows={3} style={{...inp,fontFamily:'inherit',lineHeight:1.6}} />
             </div>
 
-            <div style={fieldStyle}>
-              <label style={labelStyle}>Cover Image URL</label>
-              <input value={coverUrl} onChange={e=>{setCoverUrl(e.target.value);setErrors(v=>({...v,coverUrl:''}));}} placeholder="https://..." style={inputStyle} />
-              {errors.coverUrl && <p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.coverUrl}</p>}
-            </div>
-
-            <div style={fieldStyle}>
-              <label style={labelStyle}>Year</label>
-              <input value={year} onChange={e=>{setYear(e.target.value);setErrors(v=>({...v,year:''}));}} placeholder="e.g. 1998" style={inputStyle} />
-              {errors.year && <p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.year}</p>}
-            </div>
-
-            <div style={fieldStyle}>
-              <label style={labelStyle}>Description</label>
-              <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Brief description (optional)..." rows={3} style={{...inputStyle,resize:'vertical',fontFamily:'inherit',lineHeight:1.6}} />
-            </div>
-
-            <div style={{display:'flex',gap:12,marginTop:8}}>
-              <button onClick={save} style={{flex:1,padding:'13px',background:C.accent,border:'none',borderRadius:10,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,transition:'filter 0.15s'}}>Add to Library</button>
-              <button onClick={onClose} style={{padding:'13px 22px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:10,color:C.muted,cursor:'pointer',fontSize:15}}>Cancel</button>
+            <div style={{display:'flex',gap:10,marginTop:8}}>
+              <button onClick={save} className="btn-shine btn-lift" style={{flex:1,padding:'13px',background:C.p,border:'none',borderRadius:10,color:'#fff',fontWeight:700,fontSize:14}}>Add to Library</button>
+              <button onClick={onClose} style={{padding:'13px 22px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:10,color:C.t3,fontSize:14}}>Cancel</button>
             </div>
           </div>
         </div>
       );
     }
 
-    // ── Edit Book Modal ───────────────────────────────────────────────────────────
+    // ── EDIT BOOK MODAL ───────────────────────────────────────────────────────────
     function EditBookModal({ book, onSave, onClose }) {
       const v = book.volumeInfo;
       const a = book.analysis || {};
-      const [tab, setTab] = useState('details');
-      const [title, setTitle] = useState(v.title || '');
-      const [author, setAuthor] = useState((v.authors || []).join(', '));
-      const [coverUrl, setCoverUrl] = useState(v.imageLinks?.thumbnail || '');
-      const [year, setYear] = useState(v.publishedDate || '');
+      const [tab, setTab]               = useState('details');
+      const [title, setTitle]           = useState(v.title || '');
+      const [author, setAuthor]         = useState((v.authors || []).join(', '));
+      const [coverUrl, setCoverUrl]     = useState(v.imageLinks?.thumbnail || '');
+      const [year, setYear]             = useState(v.publishedDate || '');
       const [description, setDescription] = useState(v.description || '');
-      const [summary, setSummary] = useState(a.summary || '');
-      const [tipsText, setTipsText] = useState((a.goldenTips || []).join('\n'));
+      const [summary, setSummary]       = useState(a.summary || '');
+      const [tipsText, setTipsText]     = useState((a.goldenTips || []).join('\n'));
       const [realLifeText, setRealLifeText] = useState((a.realLife || []).join('\n'));
-      const [chapters, setChapters] = useState(a.chapters ? a.chapters.map(c=>({...c})) : []);
-      const [errors, setErrors] = useState({});
+      const [chapters, setChapters]     = useState(a.chapters ? a.chapters.map(c=>({...c})) : []);
+      const [errors, setErrors]         = useState({});
 
-      const inp = {width:'100%',background:C.surface2,border:`1px solid ${C.border}`,borderRadius:10,padding:'11px 13px',color:C.text,fontSize:14,outline:'none',transition:'border-color 0.2s'};
-      const lbl = {fontSize:11,color:C.muted,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:0.8};
+      const inp = {width:'100%',background:C.surface2,border:`1px solid ${C.border}`,borderRadius:10,padding:'11px 13px',color:C.t6,fontSize:14,transition:'border-color .2s ease,box-shadow .2s ease'};
+      const lbl = {fontSize:11,color:C.t2,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:.9,fontFamily:'var(--fm)'};
       const fld = {marginBottom:16};
 
       const save = () => {
-        if (!title.trim()) { setErrors({title:'Title is required'}); setTab('details'); return; }
+        if (!title.trim())  { setErrors({title:'Title is required'});  setTab('details'); return; }
         if (!author.trim()) { setErrors({author:'Author is required'}); setTab('details'); return; }
         const hasAnalysis = summary || tipsText || realLifeText || chapters.length > 0;
         onSave({
           ...book,
           volumeInfo: {
-            ...v,
-            title: title.trim(),
-            authors: author.split(',').map(s=>s.trim()).filter(Boolean),
-            imageLinks: coverUrl.trim() ? {thumbnail:coverUrl.trim(),smallThumbnail:coverUrl.trim()} : v.imageLinks,
-            publishedDate: year.trim(),
-            description: description.trim(),
+            ...v, title:title.trim(),
+            authors:author.split(',').map(s=>s.trim()).filter(Boolean),
+            imageLinks:coverUrl.trim()?{thumbnail:coverUrl.trim(),smallThumbnail:coverUrl.trim()}:v.imageLinks,
+            publishedDate:year.trim(), description:description.trim(),
           },
           analysis: hasAnalysis ? {
-            summary: summary.trim(),
-            goldenTips: tipsText.split('\n').map(s=>s.trim()).filter(Boolean),
-            realLife: realLifeText.split('\n').map(s=>s.trim()).filter(Boolean),
-            chapters: chapters.filter(c=>c.title.trim()),
+            summary:summary.trim(),
+            goldenTips:tipsText.split('\n').map(s=>s.trim()).filter(Boolean),
+            realLife:realLifeText.split('\n').map(s=>s.trim()).filter(Boolean),
+            chapters:chapters.filter(c=>c.title.trim()),
           } : undefined,
         });
       };
 
       const addChapter = () => setChapters(ch=>[...ch,{title:'',summary:''}]);
-      const delChapter = (i) => setChapters(ch=>ch.filter((_,idx)=>idx!==i));
+      const delChapter = i  => setChapters(ch=>ch.filter((_,idx)=>idx!==i));
       const updChapter = (i,field,val) => setChapters(ch=>ch.map((c,idx)=>idx===i?{...c,[field]:val}:c));
 
       const TabBtn = ({id,label,dot}) => (
         <button className="tab-btn" onClick={()=>setTab(id)}
-          style={{background:tab===id?C.accent:'transparent',color:tab===id?'#fff':C.muted}}>
-          {label}{dot&&<span style={{marginLeft:5,color:C.green,fontSize:10}}>●</span>}
+          style={{background:tab===id?C.p:'transparent',color:tab===id?'#fff':C.t3}}>
+          {label}{dot && <span style={{marginLeft:5,color:C.em,fontSize:10}}>●</span>}
         </button>
       );
 
       return (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200}} onClick={onClose}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:32,width:580,maxWidth:'94vw',maxHeight:'92vh',overflowY:'auto',display:'flex',flexDirection:'column',gap:0}} onClick={e=>e.stopPropagation()}>
+        <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.72)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300}}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            background:C.surface, border:`1px solid ${C.borderP}`,
+            borderRadius:20, padding:30, width:580, maxWidth:'95vw', maxHeight:'92vh',
+            overflowY:'auto', display:'flex', flexDirection:'column',
+            boxShadow:'0 32px 80px rgba(0,0,0,.6)',
+            animation:'slideUp .35s cubic-bezier(.22,1,.36,1) both',
+          }}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-              <h2 style={{fontSize:19,fontWeight:700}}>Edit Book</h2>
-              <button onClick={onClose} style={{background:'transparent',border:'none',color:C.muted,fontSize:22,cursor:'pointer',lineHeight:1}}>×</button>
+              <h2 style={{fontSize:17,fontWeight:800,fontFamily:'var(--fd)',color:C.t6}}>Edit Book</h2>
+              <button onClick={onClose} style={{background:'transparent',border:'none',color:C.t3,fontSize:22,lineHeight:1}}>×</button>
             </div>
 
-            <div style={{display:'flex',gap:4,background:C.surface2,padding:4,borderRadius:10,marginBottom:24}}>
-              <TabBtn id="details" label="Details" />
+            <div style={{display:'flex',gap:4,background:C.surface2,padding:4,borderRadius:10,marginBottom:22}}>
+              <TabBtn id="details"  label="Details" />
               <TabBtn id="analysis" label="Analysis" dot={!!book.analysis} />
             </div>
 
             {tab === 'details' && (
               <div>
-                <div style={fld}>
-                  <label style={lbl}>Title *</label>
-                  <input value={title} onChange={e=>{setTitle(e.target.value);setErrors(v=>({...v,title:''}));}} autoFocus style={inp} />
-                  {errors.title && <p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.title}</p>}
-                </div>
-                <div style={fld}>
-                  <label style={lbl}>Author *</label>
-                  <input value={author} onChange={e=>{setAuthor(e.target.value);setErrors(v=>({...v,author:''}));}} style={inp} />
-                  {errors.author && <p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.author}</p>}
-                </div>
-                <div style={fld}>
-                  <label style={lbl}>Cover Image URL</label>
-                  <input value={coverUrl} onChange={e=>setCoverUrl(e.target.value)} placeholder="https://..." style={inp} />
-                </div>
-                <div style={fld}>
-                  <label style={lbl}>Year</label>
-                  <input value={year} onChange={e=>setYear(e.target.value)} placeholder="e.g. 1998" style={inp} />
-                </div>
-                <div style={fld}>
-                  <label style={lbl}>Description</label>
-                  <textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{...inp,resize:'vertical',fontFamily:'inherit',lineHeight:1.6}} />
-                </div>
+                <div style={fld}><label style={lbl}>Title *</label><input value={title} onChange={e=>{setTitle(e.target.value);setErrors(v=>({...v,title:''}));}} autoFocus style={inp} />{errors.title&&<p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.title}</p>}</div>
+                <div style={fld}><label style={lbl}>Author *</label><input value={author} onChange={e=>{setAuthor(e.target.value);setErrors(v=>({...v,author:''}));}} style={inp} />{errors.author&&<p style={{color:C.error,fontSize:12,marginTop:4}}>{errors.author}</p>}</div>
+                <div style={fld}><label style={lbl}>Cover Image URL</label><input value={coverUrl} onChange={e=>setCoverUrl(e.target.value)} placeholder="https://..." style={inp} /></div>
+                <div style={fld}><label style={lbl}>Year</label><input value={year} onChange={e=>setYear(e.target.value)} placeholder="e.g. 1998" style={inp} /></div>
+                <div style={fld}><label style={lbl}>Description</label><textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{...inp,fontFamily:'inherit',lineHeight:1.6}} /></div>
               </div>
             )}
 
             {tab === 'analysis' && (
               <div>
                 {!book.analysis && (
-                  <div style={{marginBottom:18,padding:'12px 16px',background:'rgba(124,110,247,0.08)',border:`1px solid rgba(124,110,247,0.25)`,borderRadius:10,color:C.muted,fontSize:13}}>
+                  <div style={{marginBottom:16,padding:'12px 16px',background:C.p2,border:`1px solid ${C.borderP}`,borderRadius:10,color:C.t3,fontSize:13}}>
                     No analysis yet. Generate one from the book view, or fill in manually below.
                   </div>
                 )}
-                <div style={fld}>
-                  <label style={{...lbl,color:C.accent}}>Summary</label>
-                  <textarea value={summary} onChange={e=>setSummary(e.target.value)} rows={5} placeholder="Write a summary of the book..." style={{...inp,resize:'vertical',fontFamily:'inherit',lineHeight:1.7}} />
-                </div>
+                <div style={fld}><label style={{...lbl,color:C.p}}>Summary</label><textarea value={summary} onChange={e=>setSummary(e.target.value)} rows={5} placeholder="Write a summary..." style={{...inp,fontFamily:'inherit',lineHeight:1.7}} /></div>
                 <div style={fld}>
                   <label style={{...lbl,color:C.gold}}>Golden Tips</label>
-                  <p style={{fontSize:11,color:C.muted,marginBottom:6}}>One tip per line</p>
-                  <textarea value={tipsText} onChange={e=>setTipsText(e.target.value)} rows={6} placeholder={"Tip 1\nTip 2\nTip 3"} style={{...inp,resize:'vertical',fontFamily:'inherit',lineHeight:1.7}} />
+                  <p style={{fontSize:11,color:C.t2,marginBottom:6}}>One tip per line</p>
+                  <textarea value={tipsText} onChange={e=>setTipsText(e.target.value)} rows={6} placeholder={"Tip 1\nTip 2\nTip 3"} style={{...inp,fontFamily:'inherit',lineHeight:1.7}} />
                 </div>
                 <div style={fld}>
-                  <label style={{...lbl,color:C.green}}>Real Life Takeaways</label>
-                  <p style={{fontSize:11,color:C.muted,marginBottom:6}}>One takeaway per line</p>
-                  <textarea value={realLifeText} onChange={e=>setRealLifeText(e.target.value)} rows={5} placeholder={"Takeaway 1\nTakeaway 2"} style={{...inp,resize:'vertical',fontFamily:'inherit',lineHeight:1.7}} />
+                  <label style={{...lbl,color:C.em}}>Real Life Takeaways</label>
+                  <p style={{fontSize:11,color:C.t2,marginBottom:6}}>One takeaway per line</p>
+                  <textarea value={realLifeText} onChange={e=>setRealLifeText(e.target.value)} rows={5} placeholder={"Takeaway 1\nTakeaway 2"} style={{...inp,fontFamily:'inherit',lineHeight:1.7}} />
                 </div>
                 <div style={fld}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-                    <label style={{...lbl,color:C.purple,margin:0}}>Chapter Summaries</label>
-                    <button onClick={addChapter} style={{background:'transparent',border:`1px solid ${C.purple}`,color:C.purple,borderRadius:7,padding:'4px 12px',cursor:'pointer',fontSize:12,fontWeight:600}}>+ Add Chapter</button>
+                    <label style={{...lbl,color:C.sk,margin:0}}>Chapter Summaries</label>
+                    <button onClick={addChapter} style={{background:'transparent',border:`1px solid ${C.sk}`,color:C.sk,borderRadius:7,padding:'4px 12px',fontSize:12,fontWeight:600}}>+ Add Chapter</button>
                   </div>
-                  {chapters.length === 0 && <p style={{color:C.muted,fontSize:13,fontStyle:'italic'}}>No chapters yet. Click "+ Add Chapter" to add one.</p>}
+                  {chapters.length === 0 && <p style={{color:C.t2,fontSize:13,fontStyle:'italic'}}>No chapters yet.</p>}
                   {chapters.map((ch, i) => (
-                    <div key={i} style={{background:C.surface2,borderRadius:10,padding:14,marginBottom:10,borderLeft:`3px solid ${C.purple}`}}>
+                    <div key={i} style={{background:C.surface2,borderRadius:10,padding:14,marginBottom:10,borderLeft:`3px solid ${C.sk}`}}>
                       <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
                         <input value={ch.title} onChange={e=>updChapter(i,'title',e.target.value)} placeholder={`Chapter ${i+1} title`} style={{...inp,flex:1,padding:'8px 12px'}} />
-                        <button onClick={()=>delChapter(i)} style={{background:'transparent',border:'none',color:C.error,cursor:'pointer',fontSize:18,lineHeight:1,padding:'0 4px',flexShrink:0}}>×</button>
+                        <button onClick={()=>delChapter(i)} style={{background:'transparent',border:'none',color:C.error,fontSize:18,lineHeight:1,padding:'0 4px'}}>×</button>
                       </div>
-                      <textarea value={ch.summary} onChange={e=>updChapter(i,'summary',e.target.value)} placeholder="Chapter summary..." rows={2} style={{...inp,resize:'vertical',fontFamily:'inherit',lineHeight:1.6,fontSize:13}} />
+                      <textarea value={ch.summary} onChange={e=>updChapter(i,'summary',e.target.value)} placeholder="Chapter summary..." rows={2} style={{...inp,fontFamily:'inherit',lineHeight:1.6,fontSize:13}} />
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <div style={{display:'flex',gap:12,marginTop:8,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
-              <button onClick={save} style={{flex:1,padding:'13px',background:C.accent,border:'none',borderRadius:10,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,transition:'filter 0.15s'}}>Save Changes</button>
-              <button onClick={onClose} style={{padding:'13px 22px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:10,color:C.muted,cursor:'pointer',fontSize:15}}>Cancel</button>
+            <div style={{display:'flex',gap:10,marginTop:8,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
+              <button onClick={save} className="btn-shine btn-lift" style={{flex:1,padding:'13px',background:C.p,border:'none',borderRadius:10,color:'#fff',fontWeight:700,fontSize:14}}>Save Changes</button>
+              <button onClick={onClose} style={{padding:'13px 22px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:10,color:C.t3,fontSize:14}}>Cancel</button>
             </div>
           </div>
         </div>
       );
     }
 
-    // ── Analysis Sections ────────────────────────────────────────────────────────
-    function Section({ label, color, children }) {
+    // ── ANALYSIS SECTION WRAPPER ─────────────────────────────────────────────────
+    function Section({ label, color, bgColor, borderColor, children, delay = 0 }) {
       return (
-        <div className="fade-in" style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:26,marginBottom:14}}>
-          <h3 style={{fontSize:15,fontWeight:700,color:color,marginBottom:18,textTransform:'uppercase',letterSpacing:1.2}}>{label}</h3>
+        <div className="section-in" style={{
+          background:C.surface, border:`1px solid ${C.border}`,
+          borderLeft:`3px solid ${color}`,
+          borderRadius:16, padding:24, marginBottom:12,
+          animationDelay:`${delay}s`,
+          position:'relative', overflow:'hidden',
+        }}>
+          <div style={{position:'absolute',top:0,left:0,right:0,height:'1px',background:`linear-gradient(to right, ${color}55, transparent)`,opacity:.6}} />
+          <h3 style={{
+            fontSize:11, fontWeight:700, fontFamily:'var(--fm)',
+            color, letterSpacing:1.4, textTransform:'uppercase',
+            marginBottom:16,
+          }}>
+            {label}
+          </h3>
           {children}
         </div>
       );
@@ -475,20 +704,29 @@ Rules:
 
     function SummarySection({ text }) {
       return (
-        <Section label="Summary" color={C.accent}>
-          <p style={{lineHeight:1.85,color:C.text,fontSize:15,whiteSpace:'pre-wrap'}}>{text}</p>
+        <Section label="Overview" color={C.p} delay={0.05}>
+          <p style={{lineHeight:1.88,color:C.t5,fontSize:14.5,whiteSpace:'pre-wrap'}}>{text}</p>
         </Section>
       );
     }
 
     function TipsSection({ tips }) {
       return (
-        <Section label="Golden Tips" color={C.gold}>
-          <ol style={{listStyle:'none',display:'flex',flexDirection:'column',gap:12}}>
-            {tips.map((tip,i) => (
+        <Section label="Golden Tips" color={C.gold} delay={0.15}>
+          <ol style={{listStyle:'none',display:'flex',flexDirection:'column',gap:14}}>
+            {tips.map((tip, i) => (
               <li key={i} style={{display:'flex',gap:14,alignItems:'flex-start'}}>
-                <span style={{background:C.gold,color:'#08080f',fontWeight:800,fontSize:11,borderRadius:20,minWidth:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:2}}>{i+1}</span>
-                <span style={{color:C.text,lineHeight:1.7,fontSize:15}}>{tip}</span>
+                <span style={{
+                  background:`linear-gradient(135deg,${C.gold},#f0c040)`,
+                  color:'#08080f', fontWeight:800, fontSize:10,
+                  fontFamily:'var(--fm)',
+                  borderRadius:20, minWidth:22, height:22,
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  flexShrink:0, marginTop:2,
+                }}>
+                  {i+1}
+                </span>
+                <span style={{color:C.t5,lineHeight:1.75,fontSize:14}}>{tip}</span>
               </li>
             ))}
           </ol>
@@ -498,12 +736,12 @@ Rules:
 
     function RealLifeSection({ points }) {
       return (
-        <Section label="Real Life Takeaways" color={C.green}>
-          <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:12}}>
-            {points.map((pt,i) => (
+        <Section label="Real Life Takeaways" color={C.em} delay={0.25}>
+          <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:13}}>
+            {points.map((pt, i) => (
               <li key={i} style={{display:'flex',gap:14,alignItems:'flex-start'}}>
-                <span style={{color:C.green,fontSize:16,lineHeight:1,marginTop:3,fontWeight:700}}>›</span>
-                <span style={{color:C.text,lineHeight:1.7,fontSize:15}}>{pt}</span>
+                <span style={{color:C.em,fontSize:14,lineHeight:1,marginTop:4,fontWeight:800}}>›</span>
+                <span style={{color:C.t5,lineHeight:1.75,fontSize:14}}>{pt}</span>
               </li>
             ))}
           </ul>
@@ -514,20 +752,27 @@ Rules:
     function ChaptersSection({ chapters }) {
       const [open, setOpen] = useState(null);
       return (
-        <Section label="Chapter Summaries" color={C.purple}>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <Section label="Chapter Summaries" color={C.sk} delay={0.35}>
+          <div style={{display:'flex',flexDirection:'column',gap:7}}>
             {chapters.map((ch, i) => (
-              <div key={i} style={{background:C.surface2,borderRadius:12,overflow:'hidden',border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.purple}`}}>
+              <div key={i} style={{background:C.surface2,borderRadius:10,overflow:'hidden',border:`1px solid ${C.border}`,borderLeft:`2px solid ${C.sk}`}}>
                 <button
+                  className="chapter-btn"
                   onClick={() => setOpen(open === i ? null : i)}
-                  style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',background:'transparent',border:'none',color:C.text,cursor:'pointer',textAlign:'left',gap:12}}
+                  style={{
+                    width:'100%',display:'flex',alignItems:'center',
+                    justifyContent:'space-between',padding:'12px 16px',
+                    background:'transparent',border:'none',color:C.t5,
+                    cursor:'pointer',textAlign:'left',gap:12,
+                    transition:'background .15s ease',
+                  }}
                 >
-                  <span style={{fontWeight:600,fontSize:14,color:C.purple}}>{ch.title}</span>
-                  <span style={{color:C.muted,fontSize:12,flexShrink:0,transition:'transform 0.2s',transform:open===i?'rotate(180deg)':'none'}}>▼</span>
+                  <span style={{fontWeight:600,fontSize:13,color:C.sk,fontFamily:'var(--fd)'}}>{ch.title}</span>
+                  <span style={{color:C.t2,fontSize:11,flexShrink:0,transition:'transform .2s ease',display:'inline-block',transform:open===i?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {open === i && (
-                  <div style={{padding:'0 18px 16px',color:C.muted,lineHeight:1.75,fontSize:14,borderTop:`1px solid ${C.border}`}}>
-                    <div style={{height:12}} />
+                  <div className="au" style={{padding:'0 16px 14px',color:C.t3,lineHeight:1.8,fontSize:13.5,borderTop:`1px solid ${C.border}`}}>
+                    <div style={{height:10}} />
                     {ch.summary}
                   </div>
                 )}
@@ -538,32 +783,43 @@ Rules:
       );
     }
 
-    // ── Main App ─────────────────────────────────────────────────────────────────
+    // ── MAIN APP ─────────────────────────────────────────────────────────────────
     function App() {
-      const [apiKey, setApiKey] = useState(() => localStorage.getItem('lib_gemini_key') || '');
+      const [apiKey, setApiKey]         = useState(() => localStorage.getItem('lib_gemini_key') || '');
       const [showSettings, setShowSettings] = useState(false);
-      const [query, setQuery] = useState('');
+      const [query, setQuery]           = useState('');
       const [suggestions, setSuggestions] = useState([]);
       const [loadingSug, setLoadingSug] = useState(false);
-      const [showDrop, setShowDrop] = useState(false);
-      const [book, setBook] = useState(null);
-      const [analysis, setAnalysis] = useState(null);
-      const [loading, setLoading] = useState(false);
-      const [error, setError] = useState('');
-      const [myBooks, setMyBooks] = useState(() => {
+      const [showDrop, setShowDrop]     = useState(false);
+      const [book, setBook]             = useState(null);
+      const [analysis, setAnalysis]     = useState(null);
+      const [loading, setLoading]       = useState(false);
+      const [error, setError]           = useState('');
+      const [myBooks, setMyBooks]       = useState(() => {
         try { return JSON.parse(localStorage.getItem('lib_my_books') || '[]'); }
         catch { return []; }
       });
       const [showAddModal, setShowAddModal] = useState(false);
-      const [editingBook, setEditingBook] = useState(null);
+      const [editingBook, setEditingBook]   = useState(null);
       const wrapRef = useRef(null);
+
+      // Inject tile hover CSS
+      useEffect(() => {
+        const s = document.createElement('style');
+        s.textContent = `
+          .book-tile-wrap:hover .tile-overlay  { opacity: 1 !important; }
+          .book-tile-wrap:hover .tile-btn-edit { opacity: 1 !important; }
+          .book-tile-wrap:hover .tile-btn-rm   { opacity: 1 !important; }
+        `;
+        document.head.appendChild(s);
+      }, []);
 
       const fetchBooks = useCallback(debounce(async (q) => {
         if (!q || q.length < 2) { setSuggestions([]); setShowDrop(false); return; }
         setLoadingSug(true);
         try {
           const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=8&fields=key,title,author_name,cover_i,first_publish_year,number_of_pages_median`;
-          const res = await fetch(url);
+          const res  = await fetch(url);
           const data = await res.json();
           const normalized = (data.docs || []).map(doc => ({
             id: doc.key,
@@ -582,22 +838,20 @@ Rules:
           }));
           setSuggestions(normalized);
           setShowDrop(normalized.length > 0);
-        } catch(e) { setSuggestions([]); setShowDrop(false); }
+        } catch { setSuggestions([]); setShowDrop(false); }
         setLoadingSug(false);
       }, 350), []);
 
       useEffect(() => { fetchBooks(query); }, [query]);
 
       useEffect(() => {
-        const down = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setShowDrop(false); };
+        const down = e => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setShowDrop(false); };
         document.addEventListener('mousedown', down);
         return () => document.removeEventListener('mousedown', down);
       }, []);
 
-      const pick = (b) => {
-        setBook(b); setQuery(b.volumeInfo.title);
-        setShowDrop(false); setAnalysis(b.analysis || null); setError('');
-      };
+      const pick = b => { setBook(b); setQuery(b.volumeInfo.title); setShowDrop(false); setAnalysis(b.analysis || null); setError(''); };
+      const reset = () => { setBook(null); setQuery(''); setAnalysis(null); setError(''); setSuggestions([]); };
 
       const generate = async () => {
         if (!apiKey) { setShowSettings(true); return; }
@@ -616,92 +870,126 @@ Rules:
         setLoading(false);
       };
 
-      const reset = () => { setBook(null); setQuery(''); setAnalysis(null); setError(''); setSuggestions([]); };
-
-      const saveMyBooks = (updated) => {
-        setMyBooks(updated);
-        localStorage.setItem('lib_my_books', JSON.stringify(updated));
-      };
-
+      const saveMyBooks = updated => { setMyBooks(updated); localStorage.setItem('lib_my_books', JSON.stringify(updated)); };
       const addBook = ({ title, author, coverUrl, year, description }) => {
         const newBook = {
           id: 'manual_' + Date.now(),
           volumeInfo: {
-            title: title.trim(),
-            authors: [author.trim()],
-            imageLinks: coverUrl.trim()
-              ? { thumbnail: coverUrl.trim(), smallThumbnail: coverUrl.trim() }
-              : null,
-            pageCount: null,
-            publishedDate: year.trim(),
-            description: description.trim(),
-            categories: [],
+            title:title.trim(), authors:[author.trim()],
+            imageLinks:coverUrl.trim()?{thumbnail:coverUrl.trim(),smallThumbnail:coverUrl.trim()}:null,
+            pageCount:null, publishedDate:year.trim(), description:description.trim(), categories:[],
           },
         };
         saveMyBooks([...myBooks, newBook]);
       };
-
       const saveToLibrary = () => {
         if (!book || myBooks.some(b => b.id === book.id)) return;
         saveMyBooks([...myBooks, { ...book, ...(analysis ? { analysis } : {}) }]);
       };
-
-      const removeBook = (bookId) => {
-        saveMyBooks(myBooks.filter(b => b.id !== bookId));
-        if (book && book.id === bookId) reset();
-      };
-
-      const saveEdit = (updatedBook) => {
+      const removeBook = bookId => { saveMyBooks(myBooks.filter(b => b.id !== bookId)); if (book && book.id === bookId) reset(); };
+      const saveEdit = updatedBook => {
         const idx = myBooks.findIndex(b => b.id === updatedBook.id);
         if (idx === -1) return;
-        const updated = [...myBooks];
-        updated[idx] = updatedBook;
-        saveMyBooks(updated);
-        setEditingBook(null);
-        if (book && book.id === updatedBook.id) {
-          setBook(updatedBook);
-          setAnalysis(updatedBook.analysis || null);
-        }
+        const updated = [...myBooks]; updated[idx] = updatedBook;
+        saveMyBooks(updated); setEditingBook(null);
+        if (book && book.id === updatedBook.id) { setBook(updatedBook); setAnalysis(updatedBook.analysis || null); }
       };
 
-      return (
-        <div style={{minHeight:'100vh',background:C.bg,paddingBottom:80}}>
+      const inLibrary = book && myBooks.some(b => b.id === book.id);
 
-          {/* Header */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'22px 32px',borderBottom:`1px solid ${C.border}`,position:'sticky',top:0,background:C.bg,zIndex:100}}>
-            <div style={{display:'flex',alignItems:'center',gap:16}}>
-              <div style={{width:36,height:36,background:C.accent,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      return (
+        <div style={{minHeight:'100vh',background:'transparent',paddingBottom:80}}>
+
+          {/* ── HEADER ── */}
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'18px 32px',
+            borderBottom:`1px solid ${C.border}`,
+            position:'sticky', top:0, zIndex:100,
+            background:'rgba(8,8,15,.88)',
+            backdropFilter:'blur(16px)',
+          }}>
+            <div style={{display:'flex',alignItems:'center',gap:14}}>
+              <div style={{
+                width:36, height:36,
+                background:`linear-gradient(135deg,${C.p1},${C.p2})`,
+                border:`1px solid ${C.borderP}`,
+                borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center',
+                color:C.p, animation:'glowPulse 4s ease-in-out infinite',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
               </div>
-              <span style={{fontSize:20,fontWeight:800,letterSpacing:0.5}}>Library</span>
+              <span style={{fontSize:18,fontWeight:800,fontFamily:'var(--fd)',color:C.t6,letterSpacing:.5}}>Library</span>
+              {myBooks.length > 0 && (
+                <span style={{fontSize:11,fontFamily:'var(--fm)',color:C.t2,background:C.surface2,border:`1px solid ${C.border}`,padding:'2px 8px',borderRadius:20}}>
+                  {myBooks.length}
+                </span>
+              )}
             </div>
-            <button onClick={()=>setShowSettings(true)} title="API Settings"
-              style={{background:'linear-gradient(135deg,rgba(124,110,248,.18),rgba(124,110,248,.08))',border:`1px solid rgba(124,110,248,.35)`,borderRadius:10,width:42,height:42,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#a78bfa',boxShadow:'0 0 16px rgba(124,110,248,.25)',transition:'transform 0.2s cubic-bezier(.22,1,.36,1),box-shadow 0.2s'}}
-              onMouseEnter={e=>{e.currentTarget.style.transform='rotate(60deg) scale(1.08)';e.currentTarget.style.boxShadow='0 0 24px rgba(124,110,248,.45)';}}
-              onMouseLeave={e=>{e.currentTarget.style.transform='rotate(0) scale(1)';e.currentTarget.style.boxShadow='0 0 16px rgba(124,110,248,.25)';}}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
+            {/* Settings gear */}
+            <button
+              onClick={() => setShowSettings(true)}
+              title="API Settings"
+              style={{
+                background:`linear-gradient(135deg,rgba(124,110,248,.15),rgba(124,110,248,.07))`,
+                border:`1px solid rgba(124,110,248,.3)`,
+                borderRadius:10, width:40, height:40,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                color:'#a78bfa',
+                boxShadow:'0 0 14px rgba(124,110,248,.2)',
+                transition:'transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s ease',
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.transform='rotate(60deg) scale(1.1)';e.currentTarget.style.boxShadow='0 0 22px rgba(124,110,248,.4)';}}
+              onMouseLeave={e=>{e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='0 0 14px rgba(124,110,248,.2)';}}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
               </svg>
             </button>
           </div>
 
-          <div style={{maxWidth:760,margin:'0 auto',padding:'48px 24px 0'}}>
+          <div style={{maxWidth:780,margin:'0 auto',padding:'44px 24px 0'}}>
 
-            {/* API key banner */}
+            {/* ── API KEY BANNER ── */}
             {!apiKey && (
-              <div style={{marginBottom:28,padding:'14px 20px',background:'rgba(124,110,247,0.1)',border:`1px solid rgba(124,110,247,0.35)`,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'space-between',gap:16}}>
-                <span style={{fontSize:14,color:C.muted}}>Add your free Groq API key to enable AI analysis.</span>
-                <button onClick={()=>setShowSettings(true)} style={{background:C.accent,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,padding:'8px 16px',cursor:'pointer',flexShrink:0}}>Add Key</button>
+              <div className="au" style={{
+                marginBottom:28, padding:'14px 20px',
+                background:'rgba(124,110,248,.07)',
+                border:`1px solid rgba(124,110,248,.25)`,
+                borderRadius:12, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16,
+              }}>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <span style={{fontSize:16}}>✦</span>
+                  <span style={{fontSize:13,color:C.t3}}>Add your free Gemini API key to enable AI book analysis.</span>
+                </div>
+                <button
+                  onClick={()=>setShowSettings(true)}
+                  className="btn-shine"
+                  style={{background:C.p,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:12,padding:'8px 16px',flexShrink:0,letterSpacing:.3}}
+                >
+                  Add Key
+                </button>
               </div>
             )}
 
-            {/* Search */}
-            <div ref={wrapRef} style={{position:'relative',marginBottom:32}}>
-              <div style={{display:'flex',alignItems:'center',background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,transition:'border-color 0.2s',gap:4}}>
-                <span style={{padding:'0 14px 0 18px',color:C.muted,display:'flex',alignItems:'center'}}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {/* ── SEARCH ── */}
+            <div ref={wrapRef} style={{position:'relative',marginBottom:36}} className="au">
+              <div style={{
+                display:'flex', alignItems:'center',
+                background:C.surface,
+                border:`1px solid ${C.border}`,
+                borderRadius:14,
+                transition:'border-color .2s ease, box-shadow .2s ease',
+                gap:4,
+              }}
+                onFocusCapture={e=>{ e.currentTarget.style.borderColor=C.borderP; e.currentTarget.style.boxShadow='0 0 0 3px rgba(124,110,248,.1)'; }}
+                onBlurCapture={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.boxShadow='none'; }}
+              >
+                <span style={{padding:'0 14px 0 18px',color:C.t2,display:'flex',alignItems:'center'}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
                 </span>
@@ -709,33 +997,50 @@ Rules:
                   value={query}
                   onChange={e=>{ setQuery(e.target.value); if(book)setBook(null); setAnalysis(null); }}
                   onFocus={()=>suggestions.length>0&&setShowDrop(true)}
-                  placeholder="Search for a book by title or author..."
-                  style={{flex:1,background:'transparent',border:'none',outline:'none',padding:'17px 0',fontSize:17,color:C.text}}
+                  placeholder="Search any book by title or author…"
+                  style={{flex:1,background:'transparent',border:'none',outline:'none',padding:'16px 0',fontSize:16,color:C.t6,boxShadow:'none'}}
                 />
                 <div style={{padding:'0 16px',display:'flex',alignItems:'center',gap:8}}>
-                  {loadingSug && <div className="spinner" />}
+                  {loadingSug && (
+                    <div style={{width:16,height:16,border:`2px solid ${C.border}`,borderTop:`2px solid ${C.p}`,borderRadius:'50%',animation:'spin .7s linear infinite'}} />
+                  )}
                   {(query||book) && (
-                    <button onClick={reset} style={{background:'transparent',border:'none',color:C.muted,cursor:'pointer',fontSize:20,lineHeight:1,padding:0}}>&times;</button>
+                    <button onClick={reset} style={{background:'transparent',border:'none',color:C.t2,fontSize:20,lineHeight:1,padding:0}}>&times;</button>
                   )}
                 </div>
               </div>
 
+              {/* Autocomplete dropdown */}
               {showDrop && suggestions.length > 0 && (
-                <div style={{position:'absolute',top:'calc(100% + 6px)',left:0,right:0,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:'hidden',zIndex:50,boxShadow:'0 16px 48px rgba(0,0,0,0.65)'}}>
-                  {suggestions.map((s,idx) => {
-                    const v = s.volumeInfo;
+                <div style={{
+                  position:'absolute',top:'calc(100% + 6px)',left:0,right:0,
+                  background:C.surface,border:`1px solid ${C.border}`,
+                  borderRadius:14,overflow:'hidden',zIndex:50,
+                  boxShadow:'0 20px 56px rgba(0,0,0,.7)',
+                  animation:'fadeIn .18s ease both',
+                }}>
+                  {suggestions.map((s, idx) => {
+                    const v   = s.volumeInfo;
                     const img = v.imageLinks?.smallThumbnail?.replace('http:','https:');
                     return (
-                      <div key={s.id} className="suggestion-item"
+                      <div
+                        key={s.id}
+                        className="suggestion-item"
                         onClick={()=>pick(s)}
-                        style={{display:'flex',alignItems:'center',gap:14,padding:'11px 16px',cursor:'pointer',borderBottom:idx<suggestions.length-1?`1px solid ${C.border}`:'none',transition:'background 0.1s'}}>
+                        style={{
+                          display:'flex', alignItems:'center', gap:14,
+                          padding:'11px 16px', cursor:'pointer',
+                          borderBottom:idx<suggestions.length-1?`1px solid ${C.border}`:'none',
+                          transition:'background .1s ease',
+                        }}
+                      >
                         {img
-                          ? <img src={img} style={{width:32,height:46,objectFit:'cover',borderRadius:4,flexShrink:0}} />
-                          : <div style={{width:32,height:46,background:C.surface2,borderRadius:4,flexShrink:0}} />
+                          ? <img src={img} style={{width:30,height:44,objectFit:'cover',borderRadius:4,flexShrink:0}} />
+                          : <div style={{width:30,height:44,background:C.surface2,borderRadius:4,flexShrink:0,border:`1px solid ${C.border}`}} />
                         }
                         <div style={{minWidth:0}}>
-                          <div style={{fontWeight:600,fontSize:14,color:C.text,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{v.title}</div>
-                          <div style={{fontSize:12,color:C.muted,marginTop:3}}>{(v.authors||[]).join(', ')}{v.publishedDate?` · ${v.publishedDate.slice(0,4)}`:''}</div>
+                          <div style={{fontWeight:700,fontSize:13,color:C.t6,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',fontFamily:'var(--fd)'}}>{v.title}</div>
+                          <div style={{fontSize:11,color:C.t2,marginTop:3,fontFamily:'var(--fm)'}}>{(v.authors||[]).join(', ')}{v.publishedDate?` · ${v.publishedDate.slice(0,4)}`:''}</div>
                         </div>
                       </div>
                     );
@@ -744,91 +1049,131 @@ Rules:
               )}
             </div>
 
-            {/* My Library */}
+            {/* ── MY LIBRARY GRID ── */}
             {!book && !loading && (
               <LibraryGrid
                 books={myBooks}
                 onSelect={pick}
                 onRemove={removeBook}
-                onEdit={b => setEditingBook(b)}
-                onAddClick={() => setShowAddModal(true)}
+                onEdit={b=>setEditingBook(b)}
+                onAddClick={()=>setShowAddModal(true)}
               />
             )}
 
-            {/* Selected book */}
+            {/* ── SELECTED BOOK (pre-analysis) ── */}
             {book && !analysis && !loading && (
-              <div className="fade-in">
+              <div className="au">
                 <BookCard book={book} />
+
                 <button
                   onClick={generate}
-                  style={{width:'100%',marginTop:14,padding:'16px',background:C.accent,border:'none',borderRadius:14,color:'#fff',fontWeight:700,fontSize:16,cursor:'pointer',transition:'filter 0.15s',letterSpacing:0.3}}>
-                  Generate AI Analysis
+                  className="btn-shine btn-lift"
+                  style={{
+                    width:'100%', marginTop:12, padding:'17px',
+                    background:`linear-gradient(135deg,${C.p},#9b8dfa)`,
+                    border:'none', borderRadius:14,
+                    color:'#fff', fontWeight:800, fontSize:15,
+                    letterSpacing:.4, fontFamily:'var(--fd)',
+                    boxShadow:`0 4px 24px rgba(124,110,248,.3)`,
+                  }}
+                >
+                  ✦ Generate AI Analysis
                 </button>
-                {myBooks.some(b => b.id === book.id)
-                  ? <p style={{textAlign:'center',marginTop:10,fontSize:13,color:C.green,fontWeight:600}}>✓ Already in your library</p>
-                  : <button onClick={saveToLibrary} style={{width:'100%',marginTop:8,padding:'13px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:14,color:C.muted,fontWeight:600,fontSize:14,cursor:'pointer',transition:'filter 0.15s'}}>
+
+                {inLibrary
+                  ? <p style={{textAlign:'center',marginTop:10,fontSize:12,color:C.em,fontWeight:700,fontFamily:'var(--fm)',letterSpacing:.4}}>✓ IN LIBRARY</p>
+                  : (
+                    <button
+                      onClick={saveToLibrary}
+                      className="btn-shine"
+                      style={{width:'100%',marginTop:8,padding:'13px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:14,color:C.t3,fontWeight:600,fontSize:14}}
+                    >
                       + Save to Library
                     </button>
+                  )
                 }
               </div>
             )}
 
-            {/* Loading */}
+            {/* ── LOADING ── */}
             {loading && (
-              <div style={{textAlign:'center',padding:'60px 0',color:C.muted}}>
-                <div style={{display:'flex',justifyContent:'center',marginBottom:20}}>
-                  <div style={{width:36,height:36,border:`3px solid ${C.border}`,borderTop:`3px solid ${C.accent}`,borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+              <div className="au" style={{textAlign:'center',padding:'70px 0',color:C.t2}}>
+                <div style={{display:'flex',justifyContent:'center',marginBottom:24}}>
+                  <div style={{
+                    position:'relative',width:52,height:52,
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                  }}>
+                    <div style={{position:'absolute',inset:0,border:`2px solid ${C.border}`,borderTop:`2px solid ${C.p}`,borderRadius:'50%',animation:'spin .9s linear infinite'}} />
+                    <div style={{position:'absolute',inset:8,border:`1px solid ${C.border}`,borderTop:`1px solid ${C.em}`,borderRadius:'50%',animation:'spin 1.4s linear infinite reverse'}} />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.p} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                  </div>
                 </div>
-                <p style={{fontSize:15}}>Analyzing <strong style={{color:C.text}}>{book?.volumeInfo.title}</strong>…</p>
-                <p style={{fontSize:13,marginTop:8}}>This may take a few seconds.</p>
+                <p style={{fontSize:15,color:C.t4,fontFamily:'var(--fd)'}}>Analyzing <strong style={{color:C.p}}>{book?.volumeInfo.title}</strong></p>
+                <p style={{fontSize:12,marginTop:6,color:C.t2,fontFamily:'var(--fm)',letterSpacing:.3}}>GEMINI 2.5 FLASH · WORKING…</p>
               </div>
             )}
 
-            {/* Error */}
+            {/* ── ERROR ── */}
             {error && (
-              <div style={{marginTop:16,padding:'16px 20px',background:'rgba(245,101,101,0.08)',border:`1px solid rgba(245,101,101,0.3)`,borderRadius:12,color:C.error,fontSize:14}}>
+              <div className="au" style={{
+                marginTop:16, padding:'16px 20px',
+                background:'rgba(240,98,146,.07)',
+                border:`1px solid rgba(240,98,146,.28)`,
+                borderLeft:`3px solid ${C.error}`,
+                borderRadius:12, color:C.error, fontSize:13,
+              }}>
                 <strong>Error:</strong> {error}
               </div>
             )}
 
-            {/* Analysis */}
+            {/* ── ANALYSIS RESULT ── */}
             {analysis && book && (
-              <div className="fade-in">
+              <div className="au">
                 <BookCard book={book} />
                 <div style={{marginTop:14}}>
-                  {analysis.summary && <SummarySection text={analysis.summary} />}
+                  {analysis.summary          && <SummarySection text={analysis.summary} />}
                   {analysis.goldenTips?.length > 0 && <TipsSection tips={analysis.goldenTips} />}
-                  {analysis.realLife?.length > 0 && <RealLifeSection points={analysis.realLife} />}
-                  {analysis.chapters?.length > 0 && <ChaptersSection chapters={analysis.chapters} />}
+                  {analysis.realLife?.length  > 0 && <RealLifeSection points={analysis.realLife} />}
+                  {analysis.chapters?.length  > 0 && <ChaptersSection chapters={analysis.chapters} />}
                 </div>
-                <div style={{display:'flex',gap:10,marginTop:8}}>
+                <div style={{display:'flex',gap:10,marginTop:10}}>
                   <button
                     onClick={()=>setAnalysis(null)}
-                    style={{flex:1,padding:'13px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:14,color:C.muted,fontWeight:600,fontSize:14,cursor:'pointer',transition:'filter 0.15s'}}>
-                    Regenerate Analysis
+                    style={{flex:1,padding:'13px',background:'transparent',border:`1px solid ${C.border}`,borderRadius:14,color:C.t3,fontWeight:600,fontSize:13}}
+                  >
+                    Regenerate
                   </button>
-                  {myBooks.some(b => b.id === book.id)
-                    ? <div style={{flex:1,padding:'13px',borderRadius:14,border:`1px solid ${C.green}`,color:C.green,fontWeight:600,fontSize:14,textAlign:'center'}}>✓ In Library</div>
-                    : <button onClick={saveToLibrary} style={{flex:1,padding:'13px',background:C.surface,border:`1px solid ${C.accent}`,borderRadius:14,color:C.accent,fontWeight:700,fontSize:14,cursor:'pointer',transition:'filter 0.15s'}}>
+                  {inLibrary
+                    ? <div style={{flex:1,padding:'13px',borderRadius:14,border:`1px solid rgba(45,212,160,.3)`,color:C.em,fontWeight:700,fontSize:13,textAlign:'center',fontFamily:'var(--fm)',letterSpacing:.4}}>✓ IN LIBRARY</div>
+                    : (
+                      <button
+                        onClick={saveToLibrary}
+                        className="btn-shine"
+                        style={{flex:1,padding:'13px',background:C.p1,border:`1px solid ${C.borderP}`,borderRadius:14,color:C.p,fontWeight:700,fontSize:13}}
+                      >
                         + Save to Library
                       </button>
+                    )
                   }
                 </div>
               </div>
             )}
 
-            {/* Empty state */}
+            {/* ── EMPTY STATE ── */}
             {myBooks.length === 0 && !book && !loading && !query && (
-              <div style={{textAlign:'center',padding:'80px 0',color:C.muted}}>
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke={C.border} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:20}}>
+              <div className="au" style={{textAlign:'center',padding:'80px 0',color:C.t2}}>
+                <svg className="float" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(124,110,248,.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:20}}>
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
-                <p style={{fontSize:17,fontWeight:600,color:C.text,marginBottom:8}}>Find your next book</p>
-                <p style={{fontSize:14}}>Search any book and get an AI-powered analysis with summaries, tips, and chapter breakdowns.</p>
+                <p style={{fontSize:18,fontWeight:800,color:C.t5,marginBottom:8,fontFamily:'var(--fd)'}}>Find your next book</p>
+                <p style={{fontSize:13,lineHeight:1.7,maxWidth:340,margin:'0 auto'}}>Search any book and get a full AI analysis — summary, golden tips, real-life takeaways, and chapter breakdowns.</p>
               </div>
             )}
           </div>
 
+          {/* ── MODALS ── */}
           {showSettings && (
             <SettingsModal
               apiKey={apiKey}
@@ -838,20 +1183,29 @@ Rules:
           )}
           {showAddModal && (
             <AddBookModal
-              onSave={(data) => { addBook(data); setShowAddModal(false); }}
-              onClose={() => setShowAddModal(false)}
+              onSave={data=>{ addBook(data); setShowAddModal(false); }}
+              onClose={()=>setShowAddModal(false)}
             />
           )}
           {editingBook && (
             <EditBookModal
               book={editingBook}
               onSave={saveEdit}
-              onClose={() => setEditingBook(null)}
+              onClose={()=>setEditingBook(null)}
             />
           )}
         </div>
       );
     }
+
+    // Inject book tile hover styles
+    const tileStyle = document.createElement('style');
+    tileStyle.textContent = `
+      .card-tilt:hover .tile-overlay  { opacity: 1 !important; }
+      .card-tilt:hover .tile-btn-edit { opacity: 1 !important; }
+      .card-tilt:hover .tile-btn-rm   { opacity: 1 !important; }
+    `;
+    document.head.appendChild(tileStyle);
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);

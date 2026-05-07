@@ -2000,7 +2000,7 @@ function Sidebar({screen,navigate,habits,goals,onCollapseChange,syncStatus,lastS
             <div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".18em",textTransform:"uppercase"}}>Personal OS</div>
             {syncStatus==="syncing"&&<span style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",animation:"breathe 1s ease-in-out infinite"}}>· syncing</span>}
             {syncStatus==="synced"&&lastSynced&&<span style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--em)"}}>· ✓ {lastSynced.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>}
-            {syncStatus==="error"&&<span style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--ro)"}}>· {localStorage.getItem("vg_github_token")?"sync err":"no token"}</span>}
+            {syncStatus==="error"&&<span style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--ro)"}}>· {syncError||"sync err"}</span>}
           </div>
         </div>}
         <button onClick={toggle} style={{width:28,height:28,borderRadius:8,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",color:"var(--t2)",fontSize:12,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",marginLeft:collapsed?0:"auto",transition:"all .2s ease"}}>
@@ -2024,7 +2024,7 @@ function Sidebar({screen,navigate,habits,goals,onCollapseChange,syncStatus,lastS
           <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:".08em"}}>
             {syncStatus==="syncing"&&<span style={{color:"var(--t1)",animation:"breathe 1s ease-in-out infinite"}}>⟳ syncing</span>}
             {syncStatus==="synced"&&lastSynced&&<span style={{color:"var(--em)"}}>✓ {lastSynced.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>}
-            {syncStatus==="error"&&<span style={{color:"var(--ro)"}}>{localStorage.getItem("vg_github_token")?"⚠ error":"⚠ no token"}</span>}
+            {syncStatus==="error"&&<span style={{color:"var(--ro)"}}>⚠ {syncError||"sync err"}</span>}
             {syncStatus==="idle"&&<span style={{color:"var(--t0)"}}>◌ idle</span>}
           </div>
         </div>
@@ -2093,6 +2093,7 @@ function App() {
   const [sidebarCollapsed,setSidebarCollapsed] = useState(()=>localStorage.getItem("vg_sidebar_collapsed")==="1");
   const [syncStatus,setSyncStatus] = useState("idle"); // "idle"|"syncing"|"synced"|"error"
   const [lastSynced,setLastSynced] = useState(null);
+  const [syncError,setSyncError] = useState("");
   const tRef = useRef(null);
   const receivingRemote = useRef(false);
   const lastRemoteHash = useRef("");
@@ -2233,13 +2234,13 @@ function App() {
       const apiBase=`https://api.github.com/repos/${repo}/contents/${path}`;
       const headers={"Authorization":`Bearer ${token}`,"Content-Type":"application/json","Accept":"application/vnd.github+json"};
       const getResp=await fetch(apiBase,{headers});
-      if(!getResp.ok){const e=await getResp.text().catch(()=>'');console.error('GH SHA fail',getResp.status,e);setSyncStatus("error");return;}
+      if(!getResp.ok){const e=await getResp.text().catch(()=>'');setSyncStatus("error");setSyncError(`SHA ${getResp.status}`);return;}
       const {sha}=await getResp.json();
       const content=btoa(unescape(encodeURIComponent(JSON.stringify(habits,null,2))));
       const putResp=await fetch(apiBase,{method:"PUT",headers,body:JSON.stringify({message:"Auto-sync habits",content,sha})});
       if(putResp.ok){setSyncStatus("synced");setLastSynced(new Date());}
-      else{const e=await putResp.text().catch(()=>'');console.error('GH PUT fail',putResp.status,e);setSyncStatus("error");}
-    }catch(err){console.error('GH push exception',err);setSyncStatus("error");}
+      else{setSyncStatus("error");setSyncError(`PUT ${putResp.status}`);}
+    }catch(err){setSyncStatus("error");setSyncError("exception");}
   }
 
   async function pushBooksToGitHub(books){
@@ -2376,7 +2377,7 @@ function App() {
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {syncStatus==="syncing"&&<span style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--t1)",letterSpacing:".1em",animation:"breathe 1s ease-in-out infinite"}}>SYNCING…</span>}
             {syncStatus==="synced"&&lastSynced&&<span style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--em)",letterSpacing:".1em"}}>✓ {lastSynced.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>}
-            {syncStatus==="error"&&<span style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--ro)",letterSpacing:".1em"}}>⚠ NO TOKEN</span>}
+            {syncStatus==="error"&&<span style={{fontFamily:"var(--fm)",fontSize:7,color:"var(--ro)",letterSpacing:".1em"}}>⚠ {syncError||"sync err"}</span>}
             <div style={{width:7,height:7,borderRadius:"50%",background:"var(--em)",boxShadow:"0 0 10px var(--em),0 0 22px rgba(45,212,160,.3)",animation:"breathe 3.2s ease-in-out infinite"}}/>
             <span style={{fontFamily:"var(--fm)",fontSize:10,color:"var(--p)",letterSpacing:".22em",opacity:.65}}>VANGUARD</span>
           </div>
