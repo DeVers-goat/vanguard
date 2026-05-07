@@ -2077,7 +2077,7 @@ function App() {
     }catch{return INIT_HABITS;}
   });
   const [goals,setGoals]   = useState(INIT_GOALS);
-  const [books,setBooks]   = useState([]);
+  const [books,setBooks]   = useState(()=>{try{const s=localStorage.getItem("vg_books");return s?JSON.parse(s):[];}catch{return [];}});
   const [nHid,setNHid]     = useState(26);
   const [nGid,setNGid]     = useState(4);
   const [nBid,setNBid]     = useState(1);
@@ -2151,6 +2151,22 @@ function App() {
     init();
   },[]);
 
+  // Persist books to localStorage + books.json GitHub sync
+  useEffect(()=>{
+    try{localStorage.setItem("vg_books",JSON.stringify(books));}catch{}
+    if(initialLoadDone.current&&books.length>0)pushBooksToGitHub(books);
+  },[books]);
+
+  // Load books from GitHub on mount
+  useEffect(()=>{
+    fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/books.json?_=${Date.now()}`)
+      .then(r=>r.ok?r.json():null).then(remote=>{
+        if(!Array.isArray(remote)||!remote.length)return;
+        setBooks(remote);
+        try{localStorage.setItem("vg_books",JSON.stringify(remote));}catch{}
+      }).catch(()=>{});
+  },[]);
+
   // Persist habits to localStorage + habits.json + GitHub auto-push (skip during initial load or remote update)
   useEffect(()=>{
     if(!initialLoadDone.current||receivingRemote.current)return;
@@ -2217,13 +2233,26 @@ function App() {
       const apiBase=`https://api.github.com/repos/${repo}/contents/${path}`;
       const headers={"Authorization":`Bearer ${token}`,"Content-Type":"application/json","Accept":"application/vnd.github+json"};
       const getResp=await fetch(apiBase,{headers});
-      if(!getResp.ok){setSyncStatus("error");return;}
+      if(!getResp.ok){const e=await getResp.text().catch(()=>'');console.error('GH SHA fail',getResp.status,e);setSyncStatus("error");return;}
       const {sha}=await getResp.json();
       const content=btoa(unescape(encodeURIComponent(JSON.stringify(habits,null,2))));
       const putResp=await fetch(apiBase,{method:"PUT",headers,body:JSON.stringify({message:"Auto-sync habits",content,sha})});
       if(putResp.ok){setSyncStatus("synced");setLastSynced(new Date());}
-      else setSyncStatus("error");
-    }catch{setSyncStatus("error");}
+      else{const e=await putResp.text().catch(()=>'');console.error('GH PUT fail',putResp.status,e);setSyncStatus("error");}
+    }catch(err){console.error('GH push exception',err);setSyncStatus("error");}
+  }
+
+  async function pushBooksToGitHub(books){
+    try{
+      const token=await getGitHubToken();
+      if(!token)return;
+      const apiBase=`https://api.github.com/repos/DeVers-goat/morning-habits/contents/books.json`;
+      const headers={"Authorization":`Bearer ${token}`,"Content-Type":"application/json","Accept":"application/vnd.github+json"};
+      const getResp=await fetch(apiBase,{headers});
+      const sha=getResp.ok?(await getResp.json()).sha:undefined;
+      const content=btoa(unescape(encodeURIComponent(JSON.stringify(books,null,2))));
+      await fetch(apiBase,{method:"PUT",headers,body:JSON.stringify({message:"Sync books",content,...(sha?{sha}:{})})});
+    }catch{}
   }
 
   async function pushReviewsToGitHub(reviews){

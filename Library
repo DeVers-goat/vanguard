@@ -74,17 +74,12 @@ Rules:
 - Real life takeaways must be specific and actionable with a clear outcome described.
 - Write as if this reference will be read years from now by someone who has forgotten the book.`;
 
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 8000,
-          temperature: 0.7,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
         }),
       });
 
@@ -94,7 +89,7 @@ Rules:
       }
 
       const data = await res.json();
-      let text = data.choices[0].message.content.trim();
+      let text = (data.candidates[0].content.parts[0].text || '').trim();
       text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
       try {
         return JSON.parse(text);
@@ -128,17 +123,17 @@ Rules:
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200}} onClick={onClose}>
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:18,padding:36,width:480,maxWidth:'90vw'}} onClick={e=>e.stopPropagation()}>
             <h2 style={{marginBottom:8,fontSize:20,fontWeight:700}}>Settings</h2>
-            <p style={{color:C.muted,fontSize:14,marginBottom:28,lineHeight:1.6}}>Paste your Groq API key for free AI book analysis. 14,400 requests/day free — no credit card needed.</p>
-            <label style={{fontSize:12,color:C.muted,display:'block',marginBottom:8,textTransform:'uppercase',letterSpacing:1}}>Groq API Key</label>
+            <p style={{color:C.muted,fontSize:14,marginBottom:28,lineHeight:1.6}}>Paste your Google Gemini API key for free AI book analysis. Generous free tier — no credit card needed.</p>
+            <label style={{fontSize:12,color:C.muted,display:'block',marginBottom:8,textTransform:'uppercase',letterSpacing:1}}>Gemini API Key</label>
             <input
               type="password" value={val} onChange={e=>setVal(e.target.value)}
               onKeyDown={e=>e.key==='Enter'&&save()}
-              placeholder="gsk_..."
+              placeholder="AIza..."
               autoFocus
               style={{width:'100%',background:C.surface2,border:`1px solid ${C.border}`,borderRadius:10,padding:'13px 15px',color:C.text,fontSize:14,outline:'none',transition:'border-color 0.2s'}}
             />
             <p style={{fontSize:12,color:C.muted,marginTop:8}}>
-              Free key at <span style={{color:C.accent}}>console.groq.com</span> — no credit card needed
+              Free key at <span style={{color:C.accent}}>aistudio.google.com</span> — no credit card needed
             </p>
             <div style={{display:'flex',gap:12,marginTop:28}}>
               <button onClick={save} style={{flex:1,padding:'13px',background:C.accent,border:'none',borderRadius:10,color:'#fff',fontWeight:700,cursor:'pointer',fontSize:15,transition:'filter 0.15s'}}>
@@ -692,7 +687,7 @@ Rules:
             {/* API key banner */}
             {!apiKey && (
               <div style={{marginBottom:28,padding:'14px 20px',background:'rgba(124,110,247,0.1)',border:`1px solid rgba(124,110,247,0.35)`,borderRadius:12,display:'flex',alignItems:'center',justifyContent:'space-between',gap:16}}>
-                <span style={{fontSize:14,color:C.muted}}>Add your free Groq API key to enable AI analysis.</span>
+                <span style={{fontSize:14,color:C.muted}}>Add your free Gemini API key to enable AI analysis.</span>
                 <button onClick={()=>setShowSettings(true)} style={{background:C.accent,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,padding:'8px 16px',cursor:'pointer',flexShrink:0}}>Add Key</button>
               </div>
             )}
