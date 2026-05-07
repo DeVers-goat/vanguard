@@ -1603,7 +1603,14 @@ function FilledField({label,storageKey,placeholder,onSave,type="text",hint}) {
   const inp={width:"100%",padding:"13px 16px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.06)",borderRadius:16,color:"var(--t6)",fontFamily:"var(--fb)",fontSize:15,fontWeight:500,caretColor:"var(--p)",display:"block",boxSizing:"border-box"};
   const [editing,setEditing]=useState(false);
   const [val,setVal]=useState("");
-  const [stored,setStored]=useState(!!localStorage.getItem(storageKey));
+  const [stored,setStored]=useState(()=>{
+    if(localStorage.getItem(storageKey)) return true;
+    try{
+      const ck=document.cookie.split(';').find(c=>c.trim().startsWith(storageKey+'='));
+      if(ck){const v=decodeURIComponent(ck.split('=').slice(1).join('=').trim());if(v){localStorage.setItem(storageKey,v);return true;}}
+    }catch{}
+    return false;
+  });
   const save=()=>{
     if(!val.trim())return;
     const v=val.trim();
@@ -1708,10 +1715,20 @@ const wkLabel = wk => {
   return `${fmt(mon)} – ${fmt(sun)} ${y}`;
 };
 
-function WeeklyReviewSheet({habits,open,onClose,toast}) {
+function WeeklyReviewSheet({habits,open,onClose,toast,onSaveReviews}) {
   const [tab,setTab]=useState("entry");
   const [reviews,setReviews]=useState(()=>{try{const s=localStorage.getItem(WK_STORE);return s?JSON.parse(s):[];}catch{return [];}});
   const wk=getISOWeek();
+  // Load reviews from GitHub when sheet opens
+  useEffect(()=>{
+    if(!open)return;
+    fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/reviews.json?_=${Date.now()}`)
+      .then(r=>r.ok?r.json():null).then(remote=>{
+        if(!Array.isArray(remote)||!remote.length)return;
+        setReviews(remote);
+        try{localStorage.setItem(WK_STORE,JSON.stringify(remote));}catch{}
+      }).catch(()=>{});
+  },[open]);
   const cur=reviews.find(r=>r.weekKey===wk)||{weekKey:wk,journal:"",weight:"",videoName:"",submittedAt:null};
   const [journal,setJournal]=useState(cur.journal||"");
   const [weight,setWeight]=useState(cur.weight||"");
@@ -1735,9 +1752,10 @@ function WeeklyReviewSheet({habits,open,onClose,toast}) {
   const save=()=>{
     if(!journal.trim()&&!weight){toast("Add a journal entry or weight to save");return;}
     const entry={weekKey:wk,journal:journal.trim(),weight:weight||null,videoName:videoName||"",submittedAt:Date.now()};
-    const next=[...reviews.filter(r=>r.weekKey!==wk),entry];
+    const next=[...reviews.filter(r=>r.weekKey!==wk),entry].sort((a,b)=>b.weekKey.localeCompare(a.weekKey));
     setReviews(next);
     try{localStorage.setItem(WK_STORE,JSON.stringify(next));}catch{}
+    if(onSaveReviews)onSaveReviews(next);
     setSuccess(true);setTimeout(()=>setSuccess(false),2400);
     toast("✓ Weekly review saved");
   };
@@ -2203,6 +2221,19 @@ function App() {
     }catch{setSyncStatus("error");}
   }
 
+  async function pushReviewsToGitHub(reviews){
+    try{
+      const token=await getGitHubToken();
+      if(!token)return;
+      const apiBase=`https://api.github.com/repos/DeVers-goat/morning-habits/contents/reviews.json`;
+      const headers={"Authorization":`Bearer ${token}`,"Content-Type":"application/json","Accept":"application/vnd.github+json"};
+      const getResp=await fetch(apiBase,{headers});
+      const sha=getResp.ok?(await getResp.json()).sha:undefined;
+      const content=btoa(unescape(encodeURIComponent(JSON.stringify(reviews,null,2))));
+      await fetch(apiBase,{method:"PUT",headers,body:JSON.stringify({message:"Sync weekly reviews",content,...(sha?{sha}:{})})});
+    }catch{}
+  }
+
   function openHabitsDB(){return new Promise((res,rej)=>{const r=indexedDB.open("vg_handles",1);r.onupgradeneeded=e=>e.target.result.createObjectStore("h");r.onsuccess=e=>res(e.target.result);r.onerror=rej;});}
   async function writeHabitsFile(habits){
     try{
@@ -2338,7 +2369,7 @@ function App() {
       </nav>
 
       <SyncSheet habits={habits} open={syncOpen} onClose={()=>setSyncOpen(false)} toast={toast}/>
-      <WeeklyReviewSheet habits={habits} open={reviewOpen} onClose={()=>setReviewOpen(false)} toast={toast}/>
+      <WeeklyReviewSheet habits={habits} open={reviewOpen} onClose={()=>setReviewOpen(false)} toast={toast} onSaveReviews={pushReviewsToGitHub}/>
       <Toast msg={toastMsg}/>
     </div>
   );
