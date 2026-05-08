@@ -909,7 +909,7 @@ Rules:
             background:'rgba(8,8,15,.88)',
             backdropFilter:'blur(16px)',
           }}>
-            <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <button onClick={reset} style={{display:'flex',alignItems:'center',gap:14,background:'transparent',border:'none',padding:0,cursor:'pointer'}}>
               <div style={{
                 width:36, height:36,
                 background:`linear-gradient(135deg,${C.p1},${C.p2})`,
@@ -927,7 +927,7 @@ Rules:
                   {myBooks.length}
                 </span>
               )}
-            </div>
+            </button>
 
             {/* Settings gear */}
             <button
