@@ -39,3 +39,35 @@ Local `c:\RanClaude\whatsapp-habits.ps1` is a manual test script; the matching W
 - Files with no extension (`Main`, `Library`) are JSX — edit them like any React file.
 - All styles live in a `<style>` block inside the file's `_st.textContent`.
 - When adding new CSS animations, put them in that block alongside existing keyframes.
+
+## Data Migration — CRITICAL
+
+When adding new fields to habits or any persisted data structure, ALWAYS add a migration in the App component's `useState` initializer AND in the `init` async function. Without this, existing user data loaded from GitHub or localStorage will be missing the new fields and behave incorrectly.
+
+**The migration pattern** (inside the `init` function's `migrate` helper):
+```js
+const migrate = h => {
+  const def = INIT_HABITS.find(x => x.id === h.id);
+  return {
+    ...h,
+    newField: h.newField ?? def?.newField ?? defaultValue,
+    // always use ?? to preserve existing data and only fill gaps
+  };
+};
+```
+
+**Rules:**
+- Never overwrite existing user data — use `??` (nullish coalescing), not `||`
+- Always backfill from `INIT_HABITS` defaults when a field is missing
+- Test by checking that `completedDates`, `days`, `goalCat`, `duration` etc. survive code updates
+- The migration runs in two places: the `useState` initializer (for localStorage) and the `init` useEffect (for GitHub data)
+- `name` and `isNN` fields are intentionally synced from `INIT_HABITS` to fix renames/promotions across code versions — this is an exception to the "don't overwrite" rule
+
+## Sync Architecture
+
+- **Cloudflare Worker** (`https://datatoken.ran-varsano.workers.dev`) handles all GitHub writes — no token needed in the browser
+- Worker endpoints: `POST /sync` (write file), `GET /read?file=X` (read file bypassing CDN cache)
+- `GITHUB_TOKEN` stored as secret in Cloudflare Worker settings — never in the browser
+- `habits.json`, `books.json`, `reviews.json` all sync to `DeVers-goat/morning-habits` repo
+- Reading uses `raw.githubusercontent.com` with cache-busting `?_=timestamp`
+- Polling every 10 seconds + immediate pull on tab focus/visibility change

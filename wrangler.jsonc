@@ -1,0 +1,5 @@
+{
+  "name": "datatoken",
+  "compatibility_date": "2026-05-09",
+  "main": "cf-worker.js"
+}
