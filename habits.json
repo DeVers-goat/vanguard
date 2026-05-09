@@ -261,7 +261,7 @@
     "name": "Organize Bed",
     "time": "20:00",
     "isNN": true,
-    "status": "failed",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -377,11 +377,13 @@
     "name": "Weighing myself",
     "time": "07:00",
     "isNN": false,
-    "status": "pending",
+    "status": "complete",
     "days": [
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-05-09"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
