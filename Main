@@ -2193,7 +2193,12 @@ function App() {
         setTimeout(()=>{receivingRemote.current=false;},500);
       }catch{}
     };
-    },[]);
+    const id=setInterval(poll,3000);
+    const onVisible=()=>{if(!document.hidden)poll();};
+    document.addEventListener('visibilitychange',onVisible);
+    window.addEventListener('focus',poll);
+    return()=>{clearInterval(id);document.removeEventListener('visibilitychange',onVisible);window.removeEventListener('focus',poll);};
+  },[]);
 
   async function getGitHubToken(){
     const ls=localStorage.getItem("vg_github_token")||"";
