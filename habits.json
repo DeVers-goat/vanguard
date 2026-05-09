@@ -380,7 +380,7 @@
     "name": "Weighing myself",
     "time": "07:00",
     "isNN": false,
-    "status": "failed",
+    "status": "pending",
     "days": [
       6
     ],
