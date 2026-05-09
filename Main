@@ -661,7 +661,7 @@ function HabitRow({h,idx,editMode,onCycle,onRename,onToggleNN,onToggleBad,onTogg
 /* ════════════════════════════════════════════════════
    HOME SCREEN
 ════════════════════════════════════════════════════ */
-function HomeScreen({habits,goals,onCycle,onSync,sweepingId,isDesktop}) {
+function HomeScreen({habits,goals,onCycle,onSync,onCoach,sweepingId,isDesktop}) {
   const nn=habits.filter(h=>h.isNN),nnDone=nn.filter(h=>h.status==="complete").length;
   const todayDow=new Date().getDay();
   const todayHabits=habits.filter(h=>!h.isNN&&!h.isBad&&!h.monthly&&(h.days||[]).includes(todayDow));
@@ -701,7 +701,10 @@ function HomeScreen({habits,goals,onCycle,onSync,sweepingId,isDesktop}) {
         {todayHabits.length===0?<div style={{padding:"16px 22px",fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".1em"}}>Nothing else scheduled today</div>
           :todayHabits.map((h,i)=><HabitRow key={h.id} h={h} idx={i} onCycle={onCycle} showTime sweeping={sweepingId===h.id}/>)}
       </div>
-      <button onClick={onSync} style={{margin:"16px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",width:"calc(100% - 44px)"}}>
+      <button onClick={onCoach} style={{margin:"16px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"15px 18px",background:"linear-gradient(135deg,rgba(124,110,248,.18),rgba(124,110,248,.08))",border:"1px solid rgba(124,110,248,.35)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--p)",cursor:"pointer",width:"calc(100% - 44px)",boxShadow:"0 0 24px rgba(124,110,248,.12)"}}>
+        <span style={{fontSize:16}}>✦</span> Ask AI Coach
+      </button>
+      <button onClick={onSync} style={{margin:"10px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",width:"calc(100% - 44px)"}}>
         {pfI()} Sync to {pfL()}
       </button>
       <div style={{margin:"22px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Active Goals</Lbl><Tag cls="p">{goals.length} targets</Tag></div>
@@ -2486,7 +2489,7 @@ function App() {
 
         {/* Screens */}
         <div key={screen} className={transDir==='right'?'screen-enter-right':'screen-enter-left'}>
-          {screen==="home"    && <HomeScreen    habits={habits} goals={goals} onCycle={onCycle} onSync={()=>setSyncOpen(true)} sweepingId={sweepingId} isDesktop={isDesktop}/>}
+          {screen==="home"    && <HomeScreen    habits={habits} goals={goals} onCycle={onCycle} onSync={()=>setSyncOpen(true)} onCoach={()=>navigate('bot')} sweepingId={sweepingId} isDesktop={isDesktop}/>}
           {screen==="habits"  && <HabitsScreen  habits={habits} setHabits={setHabits} nHid={nHid} setNHid={setNHid} onSync={()=>setSyncOpen(true)} onSetupExport={setupHabitsExport} onReview={()=>setReviewOpen(true)} sweepingId={sweepingId} isDesktop={isDesktop}/>}
           {screen==="goals"   && <GoalsScreen   goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} showToast={toast} habits={habits}/>}
           {screen==="library" && <LibraryScreen books={books} setBooks={setBooks} nBid={nBid} setNBid={setNBid} toast={toast}/>}
