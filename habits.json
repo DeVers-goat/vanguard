@@ -380,13 +380,11 @@
     "name": "Weighing myself",
     "time": "07:00",
     "isNN": false,
-    "status": "complete",
+    "status": "failed",
     "days": [
       6
     ],
-    "completedDates": [
-      "2026-05-09"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
