@@ -2148,6 +2148,7 @@ function App() {
       if(!habits) habits=INIT_HABITS;
       habits=applyReset(habits);
       try{localStorage.setItem("vg_habits",JSON.stringify(habits));}catch{}
+      lastRemoteHash.current=habits.map(h=>`${h.id}:${h.status}:${(h.completedDates||[]).join(',')}`).join('|');
       setHabits(habits);
       initialLoadDone.current=true;
     };
@@ -2184,7 +2185,7 @@ function App() {
     const poll=async()=>{
       if(!initialLoadDone.current)return;
       try{
-        const resp=await fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/habits.json?_=${Date.now()}`);
+        const resp=await fetch(`${WORKER_URL}/read?file=habits.json`);
         if(!resp.ok)return;
         const remote=await resp.json();
         if(!Array.isArray(remote)||remote.length===0)return;
@@ -2194,12 +2195,13 @@ function App() {
         const migrated=remote.map(migrateH);
         receivingRemote.current=true;
         setHabits(migrated);
+        toast("↓ Synced from another device");
         try{localStorage.setItem("vg_habits",JSON.stringify(migrated));}catch{}
         setTimeout(()=>{receivingRemote.current=false;},500);
       }catch{}
     };
-    // Poll every 10 seconds
-    const id=setInterval(poll,10000);
+    // Poll every 3 seconds via worker (bypasses CDN cache, near-instant cross-device sync)
+    const id=setInterval(poll,3000);
     // Also pull immediately when tab/app becomes visible
     const onVisible=()=>{if(!document.hidden)poll();};
     document.addEventListener('visibilitychange',onVisible);

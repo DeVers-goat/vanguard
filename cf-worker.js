@@ -15,7 +15,6 @@ const CORS = {
 
 const ALLOWED_FILES = ['habits.json', 'books.json', 'reviews.json'];
 const REPO = 'DeVers-goat/morning-habits';
-
 export default {
   async fetch(request, env) {
     // CORS preflight
@@ -31,19 +30,22 @@ export default {
       if (!ALLOWED_FILES.includes(file)) {
         return new Response('Forbidden', { status: 403, headers: CORS });
       }
+
       const apiUrl = `https://api.github.com/repos/${REPO}/contents/${file}`;
       const resp = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${env.GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github+json',
           'User-Agent': 'Vanguard-App',
-        }
+        },
+        cf: { cacheTtl: 0, cacheEverything: false },
       });
       if (!resp.ok) return new Response('Not found', { status: 404, headers: CORS });
       const data = await resp.json();
       const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+
       return new Response(JSON.stringify(content), {
-        headers: { ...CORS, 'Content-Type': 'application/json' }
+        headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
 
@@ -66,8 +68,8 @@ export default {
         'User-Agent': 'Vanguard-App',
       };
 
-      // Get current SHA
-      const getResp = await fetch(apiBase, { headers });
+      // Get current SHA (bypass Cloudflare cache)
+      const getResp = await fetch(apiBase, { headers, cf: { cacheTtl: 0, cacheEverything: false } });
       const sha = getResp.ok ? (await getResp.json()).sha : undefined;
 
       // Encode and push
