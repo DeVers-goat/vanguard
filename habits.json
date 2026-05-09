@@ -14,7 +14,9 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-05-01"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
@@ -74,6 +76,7 @@
     ],
     "completedDates": [
       "2026-05-01",
+      "2026-05-08",
       "2026-05-09"
     ],
     "duration": 0,
@@ -107,9 +110,7 @@
       3,
       5
     ],
-    "completedDates": [
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 25,
     "isBad": false,
     "monthly": false
@@ -125,9 +126,7 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 90,
     "isBad": false,
     "monthly": false
@@ -282,7 +281,7 @@
     "name": "Evening magnesium",
     "time": "21:00",
     "isNN": true,
-    "status": "pending",
+    "status": "failed",
     "days": [
       0,
       1,
@@ -292,9 +291,7 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-05-01"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
