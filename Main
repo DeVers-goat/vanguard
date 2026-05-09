@@ -2098,7 +2098,7 @@ function AppRoot() {
 /* ════════════════════════════════════════════════════
    SIDEBAR (desktop only)
 ════════════════════════════════════════════════════ */
-function Sidebar({screen,navigate,habits,goals,onCollapseChange,syncStatus,lastSynced}) {
+function Sidebar({screen,navigate,habits,goals,onCollapseChange,syncStatus,lastSynced,syncError=""}) {
   const [collapsed,setCollapsed]=useState(()=>localStorage.getItem("vg_sidebar_collapsed")==="1");
   const toggle=()=>{const n=!collapsed;setCollapsed(n);localStorage.setItem("vg_sidebar_collapsed",n?"1":"0");if(onCollapseChange)onCollapseChange(n);};
   const todayDow=new Date().getDay();
@@ -2479,7 +2479,7 @@ function App() {
   return (
     <div style={C.app}>
       {/* Desktop sidebar */}
-      {isDesktop&&<Sidebar screen={screen} navigate={navigate} habits={habits} goals={goals} onCollapseChange={setSidebarCollapsed} syncStatus={syncStatus} lastSynced={lastSynced}/>}
+      {isDesktop&&<Sidebar screen={screen} navigate={navigate} habits={habits} goals={goals} onCollapseChange={setSidebarCollapsed} syncStatus={syncStatus} lastSynced={lastSynced} syncError={syncError}/>}
 
       <div className={isDesktop?`desktop-content${sidebarCollapsed?" sidebar-collapsed":""}`:""}>
         {/* Mobile status bar */}

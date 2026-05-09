@@ -68,21 +68,24 @@ export default {
         'User-Agent': 'Vanguard-App',
       };
 
-      // Get current SHA (bypass Cloudflare cache)
-      const getResp = await fetch(apiBase, { headers, cf: { cacheTtl: 0, cacheEverything: false } });
-      const sha = getResp.ok ? (await getResp.json()).sha : undefined;
-
-      // Encode and push
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
-      const putResp = await fetch(apiBase, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({
-          message: `Auto-sync ${file}`,
-          content: encoded,
-          ...(sha ? { sha } : {}),
-        }),
-      });
+
+      // Retry up to 3 times on SHA conflict (409)
+      let putResp;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const getResp = await fetch(apiBase, { headers });
+        const sha = getResp.ok ? (await getResp.json()).sha : undefined;
+        putResp = await fetch(apiBase, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            message: `Auto-sync ${file}`,
+            content: encoded,
+            ...(sha ? { sha } : {}),
+          }),
+        });
+        if (putResp.status !== 409) break; // success or non-conflict error
+      }
 
       return new Response(
         JSON.stringify({ ok: putResp.ok, status: putResp.status }),
