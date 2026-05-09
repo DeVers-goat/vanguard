@@ -1905,7 +1905,7 @@ function WeeklyReviewSheet({habits,open,onClose,toast,onSaveReviews}) {
 const ALLOWED_EMAIL = "ran.varsano@gmail.com";
 const ALLOWED_CLIENT_ID = "980450679027-bffme0pdvmqqi0v6tt4vjaf4gtpcqg0t.apps.googleusercontent.com";
 // Set this after deploying your Cloudflare Worker
-const WORKER_URL = "https://1.ran-varsano.workers.dev";
+const WORKER_URL = "https://datatoken.ran-varsano.workers.dev";
 
 function LoginScreen({onAuth}) {
   const [error,setError] = useState("");
