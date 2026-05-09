@@ -197,7 +197,7 @@
     "name": "Chess",
     "time": "16:00",
     "isNN": true,
-    "status": "complete",
+    "status": "failed",
     "days": [
       0,
       1,
@@ -208,8 +208,7 @@
       6
     ],
     "completedDates": [
-      "2026-05-01",
-      "2026-05-09"
+      "2026-05-01"
     ],
     "duration": 0,
     "isBad": false,
