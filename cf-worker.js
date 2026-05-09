@@ -90,6 +90,37 @@ export default {
       );
     }
 
+    // POST /ai — proxy to Claude API (ANTHROPIC_API_KEY stored as Cloudflare secret)
+    if (request.method === 'POST' && url.pathname === '/ai') {
+      let body;
+      try { body = await request.json(); } catch {
+        return new Response('Bad request', { status: 400, headers: CORS });
+      }
+      const { messages, system } = body;
+      if (!messages || !Array.isArray(messages)) {
+        return new Response('Bad request', { status: 400, headers: CORS });
+      }
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'x-api-key': env.ANTHROPIC_API_KEY,
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 4000,
+          ...(system ? { system } : {}),
+          messages,
+        }),
+      });
+      const data = await resp.json();
+      return new Response(JSON.stringify(data), {
+        status: resp.status,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response('Not found', { status: 404, headers: CORS });
   }
 };

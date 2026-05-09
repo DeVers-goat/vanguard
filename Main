@@ -1895,6 +1895,119 @@ function WeeklyReviewSheet({habits,open,onClose,toast,onSaveReviews}) {
 }
 
 /* ════════════════════════════════════════════════════
+   BOT SCREEN — AI COACH
+════════════════════════════════════════════════════ */
+function BotScreen({habits,books}){
+  const [msgs,setMsgs]=useState([{role:'assistant',content:"Hey Ran 👋 Your habits, books and reviews are loaded. Ask me anything or tap a command."}]);
+  const [input,setInput]=useState('');
+  const [busy,setBusy]=useState(false);
+  const endRef=useRef(null);
+
+  useEffect(()=>{endRef.current?.scrollIntoView({behavior:'smooth'});},[msgs,busy]);
+
+  const CMDS=[
+    {label:'📊 Weekly Report',prompt:'Generate my full weekly report for this week. Calculate each habit\'s completions vs scheduled days. Break it down by domain. Be honest and direct.'},
+    {label:'💪 Habit Analysis',prompt:'Analyze my habit completion patterns. What am I consistently missing? What\'s going well? Give me actionable focus for next week.'},
+    {label:'📚 Books',prompt:'What books am I currently reading or have read? What are the key insights I should be applying right now based on my notes and chapters?'},
+    {label:'🎯 Goal Progress',prompt:'How are my goals tracking based on my habit data? Which life domain (physical/financial/mental/social) needs the most urgent attention?'},
+  ];
+
+  function buildSystem(){
+    const reviews=(() => {try{return JSON.parse(localStorage.getItem('vg_weekly_reviews')||'[]');}catch{return [];}})();
+    const today=new Date().toLocaleDateString('en-CA');
+    const dow=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const d=new Date();
+    const weekStart=new Date(d);weekStart.setDate(d.getDate()-d.getDay());
+    const weekDates=Array.from({length:7},(_,i)=>{const x=new Date(weekStart);x.setDate(weekStart.getDate()+i);return x.toLocaleDateString('en-CA');});
+    return `You are Ran Versano's personal AI coach inside the Vanguard app.
+Today: ${today} (${dow[d.getDay()]})
+Current week (Sun–Sat): ${weekDates[0]} to ${weekDates[6]}
+Week dates: ${JSON.stringify(weekDates)}
+
+DOW convention: Sun=0 Mon=1 Tue=2 Wed=3 Thu=4 Fri=5 Sat=6
+isBad:true = bad habit to avoid (completing = failure)
+isNN:true = non-negotiable
+monthly:true = skip from weekly counts
+
+HABITS:
+${JSON.stringify(habits,null,2)}
+
+BOOKS:
+${JSON.stringify((books||[]).slice(0,15),null,2)}
+
+WEEKLY REVIEWS:
+${JSON.stringify(reviews,null,2)}
+
+Be direct, honest, no fluff. Short headers. Concrete numbers.`;
+  }
+
+  async function send(text){
+    if(!text.trim()||busy)return;
+    const next=[...msgs,{role:'user',content:text.trim()}];
+    setMsgs(next);setInput('');setBusy(true);
+    try{
+      const r=await fetch(`${WORKER_URL}/ai`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:buildSystem(),messages:next})});
+      const d=await r.json();
+      if(d.error)throw new Error(d.error.message);
+      const reply=d.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'No response';
+      setMsgs(m=>[...m,{role:'assistant',content:reply}]);
+    }catch(e){
+      setMsgs(m=>[...m,{role:'assistant',content:`Error: ${e.message}`}]);
+    }
+    setBusy(false);
+  }
+
+  const bub={padding:'12px 16px',borderRadius:4,fontFamily:'var(--fb)',fontSize:14,lineHeight:1.7,whiteSpace:'pre-wrap',wordBreak:'break-word'};
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%',background:'var(--bg)'}}>
+      <div style={{padding:'18px 20px 14px',borderBottom:'1px solid var(--e0)',flexShrink:0}}>
+        <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700,color:'var(--t6)',letterSpacing:'.04em'}}>✦ AI Coach</div>
+        <div style={{fontFamily:'var(--fm)',fontSize:8,color:'var(--t1)',letterSpacing:'.18em',textTransform:'uppercase',marginTop:3}}>Vanguard data loaded · claude-sonnet-4-6</div>
+      </div>
+
+      <div style={{flex:1,overflowY:'auto',padding:'16px',display:'flex',flexDirection:'column',gap:10}}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:'flex',justifyContent:m.role==='user'?'flex-end':'flex-start'}}>
+            <div style={{...bub,maxWidth:'85%',
+              ...(m.role==='user'
+                ?{background:'linear-gradient(135deg,rgba(124,110,248,.85),rgba(100,88,220,.85))',color:'#fff',borderRadius:'18px 18px 4px 18px'}
+                :{background:'rgba(255,255,255,.05)',border:'1px solid var(--e0)',color:'var(--t5)',borderRadius:'18px 18px 18px 4px'})
+            }}>{m.content}</div>
+          </div>
+        ))}
+        {busy&&(
+          <div style={{display:'flex',justifyContent:'flex-start'}}>
+            <div style={{...bub,background:'rgba(255,255,255,.05)',border:'1px solid var(--e0)',color:'var(--t2)',borderRadius:'18px 18px 18px 4px',animation:'pulse 1.4s ease-in-out infinite'}}>Thinking…</div>
+          </div>
+        )}
+        <div ref={endRef}/>
+      </div>
+
+      <div style={{padding:'10px 14px 6px',display:'flex',gap:7,overflowX:'auto',flexShrink:0,scrollbarWidth:'none'}}>
+        {CMDS.map(c=>(
+          <button key={c.label} onClick={()=>send(c.prompt)} disabled={busy}
+            style={{padding:'7px 13px',borderRadius:20,border:'1px solid rgba(124,110,248,.3)',background:'rgba(124,110,248,.08)',color:'var(--p)',fontFamily:'var(--fm)',fontSize:9,letterSpacing:'.1em',textTransform:'uppercase',cursor:busy?'default':'pointer',whiteSpace:'nowrap',flexShrink:0,opacity:busy?.45:1,transition:'opacity .2s'}}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{padding:'8px 14px 16px',flexShrink:0,display:'flex',gap:10,alignItems:'flex-end'}}>
+        <textarea value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input);}}}
+          placeholder="Ask anything about your habits, goals, books…"
+          rows={1} style={{flex:1,background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.1)',borderRadius:16,padding:'12px 16px',color:'var(--t5)',fontFamily:'var(--fb)',fontSize:14,resize:'none',outline:'none',caretColor:'var(--p)',lineHeight:1.5,maxHeight:120,overflowY:'auto'}}/>
+        <button onClick={()=>send(input)} disabled={busy||!input.trim()}
+          style={{width:44,height:44,borderRadius:14,background:busy||!input.trim()?'rgba(124,110,248,.2)':'var(--p)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'#fff',flexShrink:0,transition:'background .2s'}}>
+          ↑
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════
    AUTH — LOGIN + APP ROOT
 ════════════════════════════════════════════════════ */
 const ALLOWED_EMAIL = "ran.varsano@gmail.com";
@@ -1984,7 +2097,7 @@ function Sidebar({screen,navigate,habits,goals,onCollapseChange,syncStatus,lastS
   const nnDone=nn.filter(h=>h.status==="complete").length;
   const todayDone=todayH.filter(h=>h.status==="complete").length;
   const user=JSON.parse(localStorage.getItem("vg_auth")||"{}");
-  const NAV=[{id:"home",ni:"⬡",nl:"Home"},{id:"habits",ni:"◈",nl:"Habits"},{id:"goals",ni:"⬢",nl:"Goals"},{id:"library",ni:"📖",nl:"Library"},{id:"profile",ni:"◉",nl:"Profile"}];
+  const NAV=[{id:"home",ni:"⬡",nl:"Home"},{id:"habits",ni:"◈",nl:"Habits"},{id:"goals",ni:"⬢",nl:"Goals"},{id:"library",ni:"📖",nl:"Library"},{id:"bot",ni:"✦",nl:"Coach"},{id:"profile",ni:"◉",nl:"Profile"}];
   const signOut=()=>{localStorage.removeItem("vg_auth");window.location.reload();};
   const W=collapsed?52:260;
   return (
@@ -2345,7 +2458,7 @@ function App() {
     }));
   };
 
-  const NAV=[{id:"home",ni:"⬡",nl:"Home"},{id:"habits",ni:"◈",nl:"Habits"},{id:"goals",ni:"⬢",nl:"Goals"},{id:"library",ni:"📖",nl:"Library"},{id:"profile",ni:"◉",nl:"Profile"}];
+  const NAV=[{id:"home",ni:"⬡",nl:"Home"},{id:"habits",ni:"◈",nl:"Habits"},{id:"goals",ni:"⬢",nl:"Goals"},{id:"library",ni:"📖",nl:"Library"},{id:"bot",ni:"✦",nl:"Coach"},{id:"profile",ni:"◉",nl:"Profile"}];
   const [transDir,setTransDir] = useState('right');
   const navigate = id => {
     const order = NAV.map(n=>n.id);
@@ -2377,6 +2490,7 @@ function App() {
           {screen==="habits"  && <HabitsScreen  habits={habits} setHabits={setHabits} nHid={nHid} setNHid={setNHid} onSync={()=>setSyncOpen(true)} onSetupExport={setupHabitsExport} onReview={()=>setReviewOpen(true)} sweepingId={sweepingId} isDesktop={isDesktop}/>}
           {screen==="goals"   && <GoalsScreen   goals={goals} setGoals={setGoals} nGid={nGid} setNGid={setNGid} showToast={toast} habits={habits}/>}
           {screen==="library" && <LibraryScreen books={books} setBooks={setBooks} nBid={nBid} setNBid={setNBid} toast={toast}/>}
+          {screen==="bot"     && <BotScreen habits={habits} books={books}/>}
           {screen==="profile" && <ProfileScreen habits={habits} onSync={()=>setSyncOpen(true)} googleApiKey={googleApiKey} googleClientId={googleClientId} googleConfigStatus={googleConfigStatus} setGoogleApiKey={setGoogleApiKey} setGoogleClientId={setGoogleClientId} saveGoogleConfig={saveGoogleConfig} connectGoogle={connectGoogle} toast={toast} onTokenSaved={()=>pushHabitsToGitHub(habits)}/>}
         </div>
       </div>
