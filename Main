@@ -1719,15 +1719,10 @@ function WeeklyReviewSheet({habits,open,onClose,toast,onSaveReviews}) {
   const [tab,setTab]=useState("entry");
   const [reviews,setReviews]=useState(()=>{try{const s=localStorage.getItem(WK_STORE);return s?JSON.parse(s):[];}catch{return [];}});
   const wk=getISOWeek();
-  // Load reviews from GitHub when sheet opens
+  // Reviews live in localStorage — don't overwrite with GitHub
   useEffect(()=>{
     if(!open)return;
-    fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/reviews.json?_=${Date.now()}`)
-      .then(r=>r.ok?r.json():null).then(remote=>{
-        if(!Array.isArray(remote)||!remote.length)return;
-        setReviews(remote);
-        try{localStorage.setItem(WK_STORE,JSON.stringify(remote));}catch{}
-      }).catch(()=>{});
+    try{const s=localStorage.getItem(WK_STORE);if(s){const parsed=JSON.parse(s);if(Array.isArray(parsed)&&parsed.length)setReviews(parsed);}}catch{}
   },[open]);
   const cur=reviews.find(r=>r.weekKey===wk)||{weekKey:wk,journal:"",weight:"",videoName:"",submittedAt:null};
   const [journal,setJournal]=useState(cur.journal||"");
@@ -2134,16 +2129,14 @@ function App() {
     };
     const init=async()=>{
       let habits=null;
-      try{
-        const resp=await fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/habits.json?_=${Date.now()}`);
-        if(resp.ok){
-          const remote=await resp.json();
-          if(Array.isArray(remote)&&remote.length>0) habits=remote.map(migrate);
-        }
-      }catch{}
+      // localStorage first — phone is the source of truth
+      try{const s=localStorage.getItem("vg_habits");if(s)habits=JSON.parse(s).map(migrate);}catch{}
       if(!habits){
-        // Fallback to localStorage
-        try{const s=localStorage.getItem("vg_habits");if(s)habits=JSON.parse(s).map(migrate);}catch{}
+        // Fallback to GitHub only if localStorage is empty
+        try{
+          const resp=await fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/habits.json?_=${Date.now()}`);
+          if(resp.ok){const remote=await resp.json();if(Array.isArray(remote)&&remote.length>0)habits=remote.map(migrate);}
+        }catch{}
       }
       if(!habits) habits=INIT_HABITS;
       habits=applyReset(habits);
@@ -2200,14 +2193,7 @@ function App() {
         setTimeout(()=>{receivingRemote.current=false;},500);
       }catch{}
     };
-    // Poll every 3 seconds via worker (bypasses CDN cache, near-instant cross-device sync)
-    const id=setInterval(poll,3000);
-    // Also pull immediately when tab/app becomes visible
-    const onVisible=()=>{if(!document.hidden)poll();};
-    document.addEventListener('visibilitychange',onVisible);
-    window.addEventListener('focus',poll);
-    return()=>{clearInterval(id);document.removeEventListener('visibilitychange',onVisible);window.removeEventListener('focus',poll);};
-  },[]);
+    },[]);
 
   async function getGitHubToken(){
     const ls=localStorage.getItem("vg_github_token")||"";
