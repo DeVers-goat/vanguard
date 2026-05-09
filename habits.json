@@ -39,7 +39,7 @@
     "name": "Morning supplements",
     "time": "07:00",
     "isNN": true,
-    "status": "pending",
+    "status": "complete",
     "days": [
       0,
       1,
@@ -50,7 +50,8 @@
       6
     ],
     "completedDates": [
-      "2026-05-01"
+      "2026-05-01",
+      "2026-05-09"
     ],
     "duration": 0,
     "isBad": false,
