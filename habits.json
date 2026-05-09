@@ -4,7 +4,7 @@
     "name": "8000 steps",
     "time": "06:00",
     "isNN": true,
-    "status": "pending",
+    "status": "complete",
     "days": [
       0,
       1,
@@ -14,7 +14,9 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-05-09"
+    ],
     "duration": 0,
     "isBad": false,
     "monthly": false
