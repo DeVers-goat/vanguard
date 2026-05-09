@@ -691,6 +691,16 @@ function HomeScreen({habits,goals,onCycle,onSync,onCoach,sweepingId,isDesktop}) 
           </div>
         ))}
       </div>
+      <button onClick={onCoach} style={{margin:"14px 22px 0",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",background:"linear-gradient(135deg,rgba(124,110,248,.22),rgba(100,88,220,.1))",border:"1px solid rgba(124,110,248,.45)",borderRadius:22,cursor:"pointer",width:"calc(100% - 44px)",boxShadow:"0 0 32px rgba(124,110,248,.15)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:22,filter:"drop-shadow(0 0 8px rgba(124,110,248,.8))"}}>✦</span>
+          <div style={{textAlign:"left"}}>
+            <div style={{fontFamily:"var(--fd)",fontSize:15,fontWeight:700,color:"var(--p)",letterSpacing:".04em"}}>AI Coach</div>
+            <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--t2)",letterSpacing:".12em",textTransform:"uppercase",marginTop:2}}>Weekly report · habits · goals · books</div>
+          </div>
+        </div>
+        <span style={{color:"var(--p)",fontSize:18,opacity:.7}}>›</span>
+      </button>
       <div style={{margin:"22px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Non-Negotiables</Lbl><Tag cls="em">{nnDone}/{nn.length}</Tag></div>
       <div className="stagger" style={{borderTop:"1px solid var(--e0)"}}>
         {nn.length===0?<div style={{padding:22,textAlign:"center",fontFamily:"var(--fm)",fontSize:10,color:"var(--t1)"}}>No Non-Negotiables set</div>
@@ -701,10 +711,7 @@ function HomeScreen({habits,goals,onCycle,onSync,onCoach,sweepingId,isDesktop}) 
         {todayHabits.length===0?<div style={{padding:"16px 22px",fontFamily:"var(--fm)",fontSize:9,color:"var(--t1)",letterSpacing:".1em"}}>Nothing else scheduled today</div>
           :todayHabits.map((h,i)=><HabitRow key={h.id} h={h} idx={i} onCycle={onCycle} showTime sweeping={sweepingId===h.id}/>)}
       </div>
-      <button onClick={onCoach} style={{margin:"16px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"15px 18px",background:"linear-gradient(135deg,rgba(124,110,248,.18),rgba(124,110,248,.08))",border:"1px solid rgba(124,110,248,.35)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--p)",cursor:"pointer",width:"calc(100% - 44px)",boxShadow:"0 0 24px rgba(124,110,248,.12)"}}>
-        <span style={{fontSize:16}}>✦</span> Ask AI Coach
-      </button>
-      <button onClick={onSync} style={{margin:"10px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",width:"calc(100% - 44px)"}}>
+      <button onClick={onSync} style={{margin:"16px 22px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px 18px",background:"var(--g1)",border:"1px solid var(--e0)",borderRadius:22,fontFamily:"var(--fm)",fontSize:9,letterSpacing:".16em",textTransform:"uppercase",color:"var(--t2)",cursor:"pointer",width:"calc(100% - 44px)"}}>
         {pfI()} Sync to {pfL()}
       </button>
       <div style={{margin:"22px 22px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><Lbl>Active Goals</Lbl><Tag cls="p">{goals.length} targets</Tag></div>
