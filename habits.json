@@ -14,9 +14,10 @@
       5,
       6
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-05-01"
+    ],
     "duration": 0,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -32,7 +33,6 @@
     ],
     "completedDates": [],
     "duration": 20,
-    "goalCat": "financial",
     "isBad": false,
     "monthly": false
   },
@@ -41,7 +41,7 @@
     "name": "Morning supplements",
     "time": "07:00",
     "isNN": true,
-    "status": "pending",
+    "status": "complete",
     "days": [
       0,
       1,
@@ -52,10 +52,10 @@
       6
     ],
     "completedDates": [
-      "2026-05-08"
+      "2026-05-01",
+      "2026-05-09"
     ],
     "duration": 0,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -64,7 +64,7 @@
     "name": "Brushing teeth",
     "time": "07:15",
     "isNN": true,
-    "status": "pending",
+    "status": "failed",
     "days": [
       0,
       1,
@@ -75,10 +75,11 @@
       6
     ],
     "completedDates": [
-      "2026-05-08"
+      "2026-05-01",
+      "2026-05-08",
+      "2026-05-09"
     ],
     "duration": 0,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -94,7 +95,6 @@
     ],
     "completedDates": [],
     "duration": 60,
-    "goalCat": "mental",
     "isBad": false,
     "monthly": false
   },
@@ -110,11 +110,8 @@
       3,
       5
     ],
-    "completedDates": [
-      "2026-05-08"
-    ],
+    "completedDates": [],
     "duration": 25,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -129,11 +126,8 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-05-08"
-    ],
+    "completedDates": [],
     "duration": 90,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -149,7 +143,6 @@
     ],
     "completedDates": [],
     "duration": 30,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -167,7 +160,6 @@
     ],
     "completedDates": [],
     "duration": 0,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -183,7 +175,6 @@
     ],
     "completedDates": [],
     "duration": 120,
-    "goalCat": "financial",
     "isBad": false,
     "monthly": false
   },
@@ -198,7 +189,6 @@
     ],
     "completedDates": [],
     "duration": 60,
-    "goalCat": "social",
     "isBad": false,
     "monthly": false
   },
@@ -218,10 +208,9 @@
       6
     ],
     "completedDates": [
-      "2026-05-08"
+      "2026-05-01"
     ],
     "duration": 0,
-    "goalCat": "mental",
     "isBad": false,
     "monthly": false
   },
@@ -236,7 +225,6 @@
     ],
     "completedDates": [],
     "duration": 20,
-    "goalCat": "social",
     "isBad": false,
     "monthly": false
   },
@@ -251,7 +239,6 @@
     ],
     "completedDates": [],
     "duration": 270,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -266,7 +253,6 @@
     ],
     "completedDates": [],
     "duration": 60,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -285,11 +271,8 @@
       5,
       6
     ],
-    "completedDates": [
-      "2026-05-08"
-    ],
+    "completedDates": [],
     "duration": 0,
-    "goalCat": "mental",
     "isBad": false,
     "monthly": false
   },
@@ -310,7 +293,6 @@
     ],
     "completedDates": [],
     "duration": 0,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -326,7 +308,6 @@
     ],
     "completedDates": [],
     "duration": 15,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -342,7 +323,6 @@
     ],
     "completedDates": [],
     "duration": 0,
-    "goalCat": "mental",
     "isBad": false,
     "monthly": false
   },
@@ -364,7 +344,6 @@
     ],
     "completedDates": [],
     "duration": 0,
-    "goalCat": null,
     "monthly": false
   },
   {
@@ -378,7 +357,6 @@
     ],
     "completedDates": [],
     "duration": 210,
-    "goalCat": "financial",
     "isBad": false,
     "monthly": false
   },
@@ -392,7 +370,6 @@
     "monthly": true,
     "completedDates": [],
     "duration": 0,
-    "goalCat": "social",
     "isBad": false
   },
   {
@@ -406,7 +383,6 @@
     ],
     "completedDates": [],
     "duration": 0,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -421,7 +397,6 @@
     ],
     "completedDates": [],
     "duration": 0,
-    "goalCat": "physical",
     "isBad": false,
     "monthly": false
   },
@@ -436,7 +411,6 @@
     ],
     "completedDates": [],
     "duration": 60,
-    "goalCat": "mental",
     "isBad": false,
     "monthly": false
   }
