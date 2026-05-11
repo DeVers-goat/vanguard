@@ -26,12 +26,14 @@
     "name": "Checking the stock market",
     "time": "06:45",
     "isNN": false,
-    "status": "pending",
+    "status": "complete",
     "days": [
       1,
       4
     ],
-    "completedDates": [],
+    "completedDates": [
+      "2026-05-11"
+    ],
     "duration": 20,
     "isBad": false,
     "monthly": false
