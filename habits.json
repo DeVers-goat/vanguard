@@ -26,7 +26,7 @@
     "name": "Checking the stock market",
     "time": "06:45",
     "isNN": false,
-    "status": "complete",
+    "status": "pending",
     "days": [
       1,
       4
@@ -43,7 +43,7 @@
     "name": "Morning supplements",
     "time": "07:00",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -66,7 +66,7 @@
     "name": "Brushing teeth",
     "time": "07:15",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -263,7 +263,7 @@
     "name": "Organize Bed",
     "time": "20:00",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
