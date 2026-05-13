@@ -41,7 +41,7 @@
     "name": "Morning supplements",
     "time": "07:00",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -64,7 +64,7 @@
     "name": "Brushing teeth",
     "time": "07:15",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -168,7 +168,7 @@
     "name": "Working on code",
     "time": "14:00",
     "isNN": false,
-    "status": "complete",
+    "status": "pending",
     "days": [
       2,
       4
