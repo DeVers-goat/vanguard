@@ -2324,7 +2324,7 @@ function App() {
       });
     }catch{return INIT_HABITS;}
   });
-  const [goals,setGoals]   = useState(INIT_GOALS);
+  const [goals,setGoals]   = useState(()=>{try{const s=localStorage.getItem("vg_goals");return s?JSON.parse(s):INIT_GOALS;}catch{return INIT_GOALS;}});
   const [books,setBooks]   = useState(()=>{try{const s=localStorage.getItem("vg_books");return s?JSON.parse(s):[];}catch{return [];}});
   const [nHid,setNHid]     = useState(26);
   const [nGid,setNGid]     = useState(4);
@@ -2397,6 +2397,22 @@ function App() {
       initialLoadDone.current=true;
     };
     init();
+  },[]);
+
+  // Persist goals to localStorage + goals.json GitHub sync
+  useEffect(()=>{
+    try{localStorage.setItem("vg_goals",JSON.stringify(goals));}catch{}
+    if(initialLoadDone.current&&goals.length>0)syncToGitHub("goals.json",goals,false);
+  },[goals]);
+
+  // Load goals from GitHub on mount
+  useEffect(()=>{
+    fetch(`https://raw.githubusercontent.com/DeVers-goat/morning-habits/main/goals.json?_=${Date.now()}`)
+      .then(r=>r.ok?r.json():null).then(remote=>{
+        if(!Array.isArray(remote)||!remote.length)return;
+        setGoals(remote);
+        try{localStorage.setItem("vg_goals",JSON.stringify(remote));}catch{}
+      }).catch(()=>{});
   },[]);
 
   // Persist books to localStorage + books.json GitHub sync
@@ -2512,6 +2528,12 @@ function App() {
 
   async function pushBooksToGitHub(books){return syncToGitHub("books.json",books,false);}
   async function pushReviewsToGitHub(reviews){return syncToGitHub("reviews.json",reviews,false);}
+
+  // On mount: ensure local reviews are backed up to GitHub
+  useEffect(()=>{
+    const local=JSON.parse(localStorage.getItem("vg_weekly_reviews")||"[]");
+    if(local.length>0)syncToGitHub("reviews.json",local,false);
+  },[]);
 
   function openHabitsDB(){return new Promise((res,rej)=>{const r=indexedDB.open("vg_handles",1);r.onupgradeneeded=e=>e.target.result.createObjectStore("h");r.onsuccess=e=>res(e.target.result);r.onerror=rej;});}
   async function writeHabitsFile(habits){
