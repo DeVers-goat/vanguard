@@ -2170,6 +2170,134 @@ function Sidebar({screen,navigate,habits,goals,onCollapseChange,syncStatus,lastS
 }
 
 /* ════════════════════════════════════════════════════
+   VANGUARD COACH — AI Chat Bot
+════════════════════════════════════════════════════ */
+function VanguardCoach({habits,goals,books,reviews}) {
+  const [open,setOpen]=useState(false);
+  const [msgs,setMsgs]=useState([{role:"assistant",content:"Hey Ran 👋 I'm your Vanguard Coach. I have full context of your habits, goals, books, and reviews. Ask me anything — review your habits, generate your weekly report, analyze your goals, or just get coaching."}]);
+  const [input,setInput]=useState("");
+  const [loading,setLoading]=useState(false);
+  const bottomRef=useRef(null);
+  const inputRef=useRef(null);
+
+  useEffect(()=>{if(open&&bottomRef.current)bottomRef.current.scrollIntoView({behavior:"smooth"});},[msgs,open]);
+  useEffect(()=>{if(open&&inputRef.current)inputRef.current.focus();},[open]);
+
+  const buildSystem=()=>{
+    const now=new Date();
+    const todayStr=now.toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+    const todayDow=now.getDay();
+    const todayHabits=(habits||[]).filter(h=>(h.days||[]).includes(todayDow)&&!h.isBad);
+    const todayDone=todayHabits.filter(h=>h.status==="complete").length;
+    const nn=(habits||[]).filter(h=>h.isNN);
+    const nnDone=nn.filter(h=>h.status==="complete").length;
+    return `You are the Vanguard Coach — Ran Versano's personal AI productivity assistant built into his habit tracking system.
+
+TODAY: ${todayStr}
+TODAY'S SCORE: ${todayDone}/${todayHabits.length} habits done · ${nnDone}/${nn.length} Non-Negotiables
+
+HABITS DATA (all ${(habits||[]).length} habits with completion history):
+${JSON.stringify(habits,null,2)}
+
+GOALS:
+${JSON.stringify(goals,null,2)}
+
+BOOKS LIBRARY (${(books||[]).length} books):
+${JSON.stringify(books,null,2)}
+
+RECENT WEEKLY REVIEWS:
+${JSON.stringify((reviews||[]).slice(0,4),null,2)}
+
+CAPABILITIES:
+- /review → analyze habit patterns, streaks, consistency
+- /weekly → full weekly performance report by domain
+- /goals → life domain breakdown (Physical/Financial/Mental/Social)
+- /books → deep analysis of reading, key lessons, retention
+- Or just ask naturally — use the actual data to give specific, honest answers
+
+RULES:
+- Always reference real habit names, actual dates, real numbers
+- Week starts Sunday. Physical=em, Financial=am, Mental=vi, Social=sk domains
+- Be direct and data-driven. No generic motivational fluff
+- If the user types /review, /weekly, /goals, or /books — run that full analysis`;
+  };
+
+  const send=async()=>{
+    const txt=input.trim();
+    if(!txt||loading)return;
+    const userMsg={role:"user",content:txt};
+    const newMsgs=[...msgs,userMsg];
+    setMsgs(newMsgs);
+    setInput("");
+    setLoading(true);
+    try{
+      const resp=await fetch(`${WORKER_URL}/ai`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          system:buildSystem(),
+          messages:newMsgs.map(m=>({role:m.role,content:m.content}))
+        })
+      });
+      const data=await resp.json();
+      const reply=data.content?.[0]?.text||"Sorry, I couldn't process that.";
+      setMsgs(m=>[...m,{role:"assistant",content:reply}]);
+    }catch(e){
+      setMsgs(m=>[...m,{role:"assistant",content:"Connection error. Make sure the Worker URL is set."}]);
+    }
+    setLoading(false);
+  };
+
+  const isDesktop=window.innerWidth>=1024;
+
+  return (<>
+    {/* Floating button */}
+    <button onClick={()=>setOpen(v=>!v)} style={{position:"fixed",bottom:open?"unset":"calc(100px + var(--sab))",right:16,width:52,height:52,borderRadius:"50%",background:"linear-gradient(135deg,#7c6ef8,#2dd4a0)",border:"none",cursor:"pointer",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:"0 4px 24px rgba(124,110,248,.5)",transition:"all .25s cubic-bezier(.22,1,.36,1)",transform:open?"scale(0)":"scale(1)"}}>🤖</button>
+
+    {/* Chat panel */}
+    {open&&<div style={{position:"fixed",bottom:0,right:isDesktop?24:0,width:isDesktop?420:"100%",height:isDesktop?"72dvh":"88dvh",background:"rgba(6,6,16,.98)",backdropFilter:"blur(40px)",border:"1px solid rgba(124,110,248,.2)",borderRadius:isDesktop?"24px 24px 0 0":"24px 24px 0 0",zIndex:1100,display:"flex",flexDirection:"column",boxShadow:"0 -8px 60px rgba(0,0,0,.7),0 0 0 1px rgba(124,110,248,.1)",animation:"slideUpSheet .3s cubic-bezier(.22,1,.36,1)"}}>
+      {/* Header */}
+      <div style={{padding:"18px 20px 14px",borderBottom:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+        <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#7c6ef8,#2dd4a0)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🤖</div>
+        <div>
+          <div style={{fontFamily:"var(--fd)",fontSize:16,fontWeight:800,color:"var(--t6)",letterSpacing:".04em"}}>VANGUARD COACH</div>
+          <div style={{fontFamily:"var(--fm)",fontSize:7.5,color:"var(--em)",letterSpacing:".14em",textTransform:"uppercase",marginTop:2}}>AI · Full Context</div>
+        </div>
+        <button onClick={()=>setOpen(false)} style={{marginLeft:"auto",width:32,height:32,borderRadius:10,background:"rgba(255,255,255,.06)",border:"none",color:"var(--t2)",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+      </div>
+
+      {/* Quick commands */}
+      <div style={{padding:"10px 16px 0",display:"flex",gap:7,overflowX:"auto",flexShrink:0}}>
+        {["/review","/weekly","/goals","/books"].map(cmd=>(
+          <button key={cmd} onClick={()=>{setInput(cmd);setTimeout(()=>send(),50);}} style={{padding:"5px 12px",borderRadius:20,background:"rgba(124,110,248,.1)",border:"1px solid rgba(124,110,248,.2)",fontFamily:"var(--fm)",fontSize:8,color:"var(--p)",letterSpacing:".1em",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>{cmd}</button>
+        ))}
+      </div>
+
+      {/* Messages */}
+      <div style={{flex:1,overflowY:"auto",padding:"16px"}}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",marginBottom:12}}>
+            <div style={{maxWidth:"85%",padding:"11px 15px",borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px",background:m.role==="user"?"linear-gradient(135deg,rgba(124,110,248,.3),rgba(124,110,248,.15))":"rgba(255,255,255,.05)",border:`1px solid ${m.role==="user"?"rgba(124,110,248,.3)":"rgba(255,255,255,.08)"}`,fontFamily:"var(--fb)",fontSize:13,color:"var(--t4)",lineHeight:1.65,whiteSpace:"pre-wrap"}}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading&&<div style={{display:"flex",gap:5,padding:"8px 4px"}}>
+          {[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:"var(--p)",animation:`breathe 1.2s ease-in-out ${i*.15}s infinite`}}/>)}
+        </div>}
+        <div ref={bottomRef}/>
+      </div>
+
+      {/* Input */}
+      <div style={{padding:"12px 16px",borderTop:"1px solid rgba(255,255,255,.06)",display:"flex",gap:10,flexShrink:0,paddingBottom:"calc(12px + var(--sab))"}}>
+        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),send())} placeholder="Ask me anything..." style={{flex:1,padding:"11px 16px",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,color:"var(--t5)",fontFamily:"var(--fb)",fontSize:14,caretColor:"var(--p)"}}/>
+        <button onClick={send} disabled={loading||!input.trim()} style={{width:44,height:44,borderRadius:14,background:input.trim()?"linear-gradient(135deg,#7c6ef8,#2dd4a0)":"rgba(255,255,255,.06)",border:"none",cursor:input.trim()?"pointer":"default",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s ease"}}>↑</button>
+      </div>
+    </div>}
+  </>);
+}
+
+/* ════════════════════════════════════════════════════
    ROOT APP
 ════════════════════════════════════════════════════ */
 function App() {
@@ -2343,6 +2471,11 @@ function App() {
   }
 
   async function syncToGitHub(file, content, isHabits=false){
+    // PC (localhost) is read-only — only mobile pushes data
+    if(window.location.hostname==="localhost"||window.location.hostname==="127.0.0.1"){
+      if(isHabits)setSyncStatus("idle");
+      return true;
+    }
     if(isHabits){setSyncStatus("syncing");setSyncError("");}
     // Use Cloudflare Worker if configured (no token needed in browser)
     if(WORKER_URL){
@@ -2517,6 +2650,7 @@ function App() {
 
       <SyncSheet habits={habits} open={syncOpen} onClose={()=>setSyncOpen(false)} toast={toast}/>
       <WeeklyReviewSheet habits={habits} open={reviewOpen} onClose={()=>setReviewOpen(false)} toast={toast} onSaveReviews={pushReviewsToGitHub}/>
+      <VanguardCoach habits={habits} goals={goals} books={books} reviews={JSON.parse(localStorage.getItem("vg_weekly_reviews")||"[]")}/>
       <Toast msg={toastMsg}/>
     </div>
   );

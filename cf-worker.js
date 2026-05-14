@@ -103,23 +103,27 @@ export default {
       if (!messages || !Array.isArray(messages)) {
         return new Response('Bad request', { status: 400, headers: CORS });
       }
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      // Use Groq (free) with llama model
+      const groqMessages = system
+        ? [{ role: 'system', content: system }, ...messages]
+        : messages;
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01',
-          'x-api-key': env.ANTHROPIC_API_KEY,
+          'Authorization': `Bearer ${env.GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
+          model: 'llama-3.3-70b-versatile',
           max_tokens: 4000,
-          ...(system ? { system } : {}),
-          messages,
+          messages: groqMessages,
         }),
       });
       const data = await resp.json();
-      return new Response(JSON.stringify(data), {
-        status: resp.status,
+      // Normalize to Anthropic-style response so the app code works unchanged
+      const text = data.choices?.[0]?.message?.content || 'No response';
+      return new Response(JSON.stringify({ content: [{ text }] }), {
+        status: resp.ok ? 200 : resp.status,
         headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
