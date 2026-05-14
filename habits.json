@@ -19,8 +19,7 @@
     ],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 2,
@@ -35,15 +34,14 @@
     "completedDates": [],
     "duration": 20,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "financial"
+    "monthly": false
   },
   {
     "id": 3,
     "name": "Morning supplements",
     "time": "07:00",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -59,15 +57,14 @@
     ],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 4,
     "name": "Brushing teeth",
     "time": "07:15",
     "isNN": true,
-    "status": "complete",
+    "status": "pending",
     "days": [
       0,
       1,
@@ -84,8 +81,7 @@
     ],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 5,
@@ -100,8 +96,7 @@
     "completedDates": [],
     "duration": 60,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "mental"
+    "monthly": false
   },
   {
     "id": 6,
@@ -118,8 +113,7 @@
     "completedDates": [],
     "duration": 25,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 7,
@@ -135,8 +129,7 @@
     "completedDates": [],
     "duration": 90,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 8,
@@ -151,8 +144,7 @@
     "completedDates": [],
     "duration": 30,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 9,
@@ -169,8 +161,7 @@
     "completedDates": [],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 10,
@@ -185,8 +176,7 @@
     "completedDates": [],
     "duration": 120,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "financial"
+    "monthly": false
   },
   {
     "id": 11,
@@ -200,8 +190,7 @@
     "completedDates": [],
     "duration": 60,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "social"
+    "monthly": false
   },
   {
     "id": 12,
@@ -223,8 +212,7 @@
     ],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "mental"
+    "monthly": false
   },
   {
     "id": 13,
@@ -240,8 +228,7 @@
     ],
     "duration": 20,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "social"
+    "monthly": false
   },
   {
     "id": 14,
@@ -255,8 +242,7 @@
     "completedDates": [],
     "duration": 270,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 15,
@@ -270,8 +256,7 @@
     "completedDates": [],
     "duration": 60,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 16,
@@ -291,8 +276,7 @@
     "completedDates": [],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "mental"
+    "monthly": false
   },
   {
     "id": 17,
@@ -312,8 +296,7 @@
     "completedDates": [],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 18,
@@ -328,8 +311,7 @@
     "completedDates": [],
     "duration": 15,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 19,
@@ -344,8 +326,7 @@
     "completedDates": [],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "mental"
+    "monthly": false
   },
   {
     "id": 20,
@@ -365,8 +346,7 @@
     ],
     "completedDates": [],
     "duration": 0,
-    "monthly": false,
-    "goalCat": null
+    "monthly": false
   },
   {
     "id": 21,
@@ -380,8 +360,7 @@
     "completedDates": [],
     "duration": 210,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "financial"
+    "monthly": false
   },
   {
     "id": 22,
@@ -393,8 +372,7 @@
     "monthly": true,
     "completedDates": [],
     "duration": 0,
-    "isBad": false,
-    "goalCat": "social"
+    "isBad": false
   },
   {
     "id": 23,
@@ -408,8 +386,7 @@
     "completedDates": [],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 24,
@@ -423,8 +400,7 @@
     "completedDates": [],
     "duration": 0,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "physical"
+    "monthly": false
   },
   {
     "id": 25,
@@ -438,7 +414,6 @@
     "completedDates": [],
     "duration": 60,
     "isBad": false,
-    "monthly": false,
-    "goalCat": "mental"
+    "monthly": false
   }
 ]
