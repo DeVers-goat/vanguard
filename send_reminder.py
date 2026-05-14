@@ -29,7 +29,5 @@ data = urllib.parse.urlencode({
     'parse_mode': 'HTML'
 }).encode()
 
-resp = urllib.request.urlopen(urllib.request.Request(url, data=data))
-body = resp.read().decode()
-print("Telegram response:", body)
+urllib.request.urlopen(urllib.request.Request(url, data=data))
 print("Morning reminder sent via Telegram!")
