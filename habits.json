@@ -43,7 +43,7 @@
     "name": "Morning supplements",
     "time": "07:00",
     "isNN": true,
-    "status": "complete",
+    "status": "failed",
     "days": [
       0,
       1,
