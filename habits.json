@@ -318,14 +318,12 @@
     "name": "No Instagram before 12PM",
     "time": "11:00",
     "isNN": false,
-    "status": "complete",
+    "status": "failed",
     "days": [
       1,
       4
     ],
-    "completedDates": [
-      "2026-05-14"
-    ],
+    "completedDates": [],
     "duration": 0,
     "isBad": false,
     "monthly": false
