@@ -1956,10 +1956,11 @@ Be direct, honest, no fluff. Short headers. Concrete numbers.`;
     const next=[...msgs,{role:'user',content:text.trim()}];
     setMsgs(next);setInput('');setBusy(true);
     try{
-      const r=await fetch(`${WORKER_URL}/ai`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:buildSystem(),messages:next})});
+      const apiMsgs=next.reduce((acc,m)=>(acc.length===0&&m.role==='assistant')?acc:[...acc,m],[]);
+      const r=await fetch(`${WORKER_URL}/ai`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:buildSystem(),messages:apiMsgs})});
       const d=await r.json();
-      if(d.error)throw new Error(d.error.message);
-      const reply=d.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'No response';
+      if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
+      const reply=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('')||JSON.stringify(d);
       setMsgs(m=>[...m,{role:'assistant',content:reply}]);
     }catch(e){
       setMsgs(m=>[...m,{role:'assistant',content:`Error: ${e.message}`}]);
