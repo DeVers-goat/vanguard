@@ -121,8 +121,8 @@ export default {
       });
       const data = await resp.json();
       // Normalize to Anthropic-style response so the app code works unchanged
-      const text = data.choices?.[0]?.message?.content || 'No response';
-      return new Response(JSON.stringify({ content: [{ text }] }), {
+      const text = data.choices?.[0]?.message?.content || JSON.stringify(data.error||data);
+      return new Response(JSON.stringify({ content: [{ type: 'text', text }] }), {
         status: resp.ok ? 200 : resp.status,
         headers: { ...CORS, 'Content-Type': 'application/json' },
       });
